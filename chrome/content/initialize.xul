@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+
+<overlay id="validation-agent-init"
+  xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+  <script type="application/x-javascript" src="monkeysphere.js" />
+
+  <script type="text/javascript">
+    window.addEventListener('load',evtLoad,false);
+    function evtLoad(evt) {
+      monkeysphere.init();
+      if(!root_prefs.getBoolPref("monkeysphere.show_label")){
+        document.getElementById("monkeysphere-statusbar-label").hidden = true;
+      }
+    }
+  </script>
+
+</overlay>

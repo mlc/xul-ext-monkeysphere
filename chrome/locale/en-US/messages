@@ -1,0 +1,20 @@
+internalError=Monkeysphere: internal error: %1$S
+
+# notification messages
+needsPermission=Query Monkeysphere validation agent for security information for this site?
+verificationSuccess=Monkeysphere has verified the security of your connection to this website and has bypassed Firefox's security error page.
+unableToVerify=Monkeysphere was unable to verify the security of your connection to this website.
+agentError=Monkeysphere validation agent error!
+
+# notification button messages
+yesQuery=Yes, query validation agent
+learnMore=Learn more
+
+# status messages
+statusURLNotValid=Monkeysphere: URL is not a valid remote server
+statusNoData=Monkeysphere: browser provided an empty URI for this connection. Try hitting refresh.
+statusNonHTTPS=Monkeysphere: non-https website (scheme is '%1$S').
+statusWhitelist=Monkeysphere: %1$S is whitelisted.
+statusNoCert=Monkeysphere: unable to retrieve a certificate for %1$S
+statusNoQueryRequested=Monkeysphere: site already trusted. 
+statusNeedsPermission=Monkeysphere: permission required to query validation agent.

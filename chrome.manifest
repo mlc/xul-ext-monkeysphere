@@ -1,0 +1,5 @@
+content monkeysphere chrome/content/
+locale monkeysphere en-US chrome/locale/en-US/
+
+overlay	chrome://browser/content/browser.xul chrome://monkeysphere/content/initialize.xul
+overlay	chrome://browser/content/browser.xul chrome://monkeysphere/content/statusbar.xul
