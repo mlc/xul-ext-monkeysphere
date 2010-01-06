@@ -9,7 +9,7 @@
     window.addEventListener('load',evtLoad,false);
     function evtLoad(evt) {
       monkeysphere.init();
-      if(!root_prefs.getBoolPref("monkeysphere.show_label")){
+      if(!monkeysphere.preferences.getBoolPref("monkeysphere.show_label")){
         document.getElementById("monkeysphere-statusbar-label").hidden = true;
       }
     }

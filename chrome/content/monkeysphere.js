@@ -8,8 +8,8 @@ var monkeysphere = {
     NEU: 2
   },
 
-  root_prefs: Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefBranchInternal),
-  override_service: Components.classes["@mozilla.org/security/certoverride;1"].getService(Components.interfaces.nsICertOverrideService),
+  // get extension preferences
+  preferences: Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefBranchInternal),
 
 ////////////////////////////////////////////////////////////
 // LOG FUNCTIONS
@@ -25,19 +25,24 @@ var monkeysphere = {
       "error" :  false
     };
 
-    line = "monkeysphere: " + flag + ": " + line;
+    var message = "monkeysphere: " + flag + ": " + line;
+    // var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
+    //   .getService(Components.interfaces.nsIConsoleService);
+    // consoleService.logStringMessage(msg);
+    // return;
+
     try {
       if(!log_flags[flag] && !log_all)
 	return;
-      dump(line);
+      dump(message + "\n");
       try {
 	// this line works in extensions
-	Firebug.Console.log(line);
+	Firebug.Console.log(message);
       } catch(e) {
 	// ignore, this will blow up if Firebug is not installed
       }
       try {
-	console.log(line); // this line works in HTML files
+	console.log(message); // this line works in HTML files
       } catch(e) {
 	// ignore, this will blow up if Firebug is not installed
       }
@@ -62,57 +67,24 @@ var monkeysphere = {
     monkeysphere.log("main", "initialization complete");
   },
 
-////////////////////////////////////////////////////////////
-// STATUS FUNCTIONS
-////////////////////////////////////////////////////////////
-
-  // set the status
-  setStatus: function(uri,state, tooltip) {
-    if(uri != null && uri != window.gBrowser.currentURI) {
-      monkeysphere.log("error","setStatus: uri missing");
-      return;
+  // FIXME: what is this functions for?  why do we need it?
+  requeryAllTabs: function(b) {
+    var num = b.browsers.length;
+    for (var i = 0; i < num; i++) {
+      var browser = b.getBrowserAtIndex(i);
+      monkeysphere.updateStatus(browser, false);
     }
-    if(!tooltip) {
-      tooltip = "Monkeysphere";
-    }
-
-    var i = document.getElementById("monkeysphere-status-image");
-    var t = document.getElementById("monkeysphere-status");
-
-    // the following happens when called from a dialog
-    if(!t || !i) {
-      i = window.opener.document.getElementById("monkeysphere-status-image");
-      t = window.opener.document.getElementById("monkeysphere-status");
-    }
-
-    t.setAttribute("tooltiptext", tooltip);
-    switch(state){
-      case monkeysphere.states.SEC:
-	monkeysphere.log("main", "set status: secure\n");
-	i.setAttribute("src", "chrome://monkeysphere/content/good.png");
-	break;
-      case monkeysphere.states.INS:
-	monkeysphere.log("main", "set status: unsecure\n");
-	i.setAttribute("src", "chrome://monkeysphere/content/bad.png");
-	break;
-      case monkeysphere.states.NEU:
-	monkeysphere.log("main", "set status: neutral\n");
-	i.setAttribute("src", "chrome://monkeysphere/content/default.png");
-	break;
-      case monkeysphere.states.ERR:
-	monkeysphere.log("main", "set status: error\n");
-	i.setAttribute("src", "chrome://monkeysphere/content/error.png");
-	break;
-    }
-    monkeysphere.log("main", "tooltip: " + tooltip + "\n");
   },
 
-  // create the event listener object
+////////////////////////////////////////////////////////////
+// EVENT LISTENER
+////////////////////////////////////////////////////////////
+
   listener: {
     onLocationChange:
       function(aWebProgress, aRequest, aURI) {
+	monkeysphere.log("main", "listener: location change: " + aURI.spec);
 	try {
-	  monkeysphere.log("main", "listener: location change: " + aURI.spec);
 	  monkeysphere.updateStatus(gBrowser, false);
 	} catch(err) {
 	  monkeysphere.log("error", "listener: location change: " + err);
@@ -144,14 +116,54 @@ var monkeysphere = {
     onLinkIconAvailable: function() { }
   },
 
-  // FIXME: what is this functions for?  why do we need it?
-  requeryAllTabs: function(b) {
-    var num = b.browsers.length;
-    for (var i = 0; i < num; i++) {
-      var browser = b.getBrowserAtIndex(i);
-      updateStatus(browser, false);
+////////////////////////////////////////////////////////////
+// STATUS FUNCTION
+////////////////////////////////////////////////////////////
+
+  // set the status
+  setStatus: function(uri,state, tooltip) {
+    if(uri != null && uri != window.gBrowser.currentURI) {
+      monkeysphere.log("error","setStatus: uri missing");
+      return;
     }
+    if(!tooltip) {
+      tooltip = "Monkeysphere";
+    }
+
+    var i = document.getElementById("monkeysphere-status-image");
+    var t = document.getElementById("monkeysphere-status");
+
+    // the following happens when called from a dialog
+    if(!t || !i) {
+      i = window.opener.document.getElementById("monkeysphere-status-image");
+      t = window.opener.document.getElementById("monkeysphere-status");
+    }
+
+    t.setAttribute("tooltiptext", tooltip);
+    switch(state){
+      case monkeysphere.states.SEC:
+	monkeysphere.log("main", "set status: secure");
+	i.setAttribute("src", "chrome://monkeysphere/content/good.png");
+	break;
+      case monkeysphere.states.INS:
+	monkeysphere.log("main", "set status: unsecure");
+	i.setAttribute("src", "chrome://monkeysphere/content/bad.png");
+	break;
+      case monkeysphere.states.NEU:
+	monkeysphere.log("main", "set status: neutral");
+	i.setAttribute("src", "chrome://monkeysphere/content/default.png");
+	break;
+      case monkeysphere.states.ERR:
+	monkeysphere.log("main", "set status: error");
+	i.setAttribute("src", "chrome://monkeysphere/content/error.png");
+	break;
+    }
+    monkeysphere.log("main", "tooltip: " + tooltip);
   },
+
+////////////////////////////////////////////////////////////
+// UPDATE AND QUERY FUNCTIONS
+////////////////////////////////////////////////////////////
 
   // Updates the status of the current page
   // 'has_user_permission' indicates whether the user
@@ -172,13 +184,13 @@ var monkeysphere = {
 
     monkeysphere.log("main", "updating status: " + uri.spec);
 
-    // check uri host
+    // check host
     try {
       var ignore = uri.host;
     } catch(err) {
       monkeysphere.setStatus(uri,
 			     monkeysphere.states.NEU,
-			     monkeysphere.messages.getFormattedString("statusURLNotValid"));
+			     monkeysphere.messages.getString("statusURLNotValid"));
       return;
     }
     if(!uri.host) {
@@ -197,61 +209,46 @@ var monkeysphere = {
       return;
     }
 
-    monkeysphere.log("main", "retrieving site certificate");
-
-    // create tab info array
-    var tab_info = {};
-    tab_info.broken = false;
-    tab_info.cert = monkeysphere.getCertificate(browser);
-
     // get site certificate
-    if(!tab_info.cert) {
-      setStatus(uri,
-      monkeysphere.states.ERR,
-      monkeysphere.messages.getFormattedString("statusNoCert",
-					       [uri.host]));
+    monkeysphere.log("main", "retrieving site certificate");
+    var cert = monkeysphere.getCertificate(browser);
+    if(!cert) {
+      monkeysphere.setStatus(uri,
+			     monkeysphere.states.ERR,
+			     monkeysphere.messages.getFormattedString("statusNoCert",
+								      [uri.host]));
       return;
     }
-    var sha1 = tab_info.cert.sha1Fingerprint;
+    var sha1 = cert.sha1Fingerprint;
+    monkeysphere.log("main", "  cert sha1: " + sha1);
+
+    // check browser state
     var state = browser.securityUI.state;
-    monkeysphere.log("main", "cert: md5: " + sha1 + ", state: " + state);
+    monkeysphere.log("main", "browser state: " + state);
 
-    tab_info.is_override_cert = monkeysphere.override_service.isCertUsedForOverrides(tab_info.cert, true, true);
-    monkeysphere.log("main", "is_override_cert = " + tab_info.is_override_cert);
-    var check_good = monkeysphere.root_prefs.getBoolPref("monkeysphere.check_good_certificates");
-
-    if(state && Components.interfaces.nsIWebProgressListener.STATE_IS_SECURE) {
-      monkeysphere.log("main", "clearing existing permission banners");
-      monkeysphere.notify.clear(browser, "Monkeysphere-Permission");
-    }
-
-    // see if the browser has this cert installed prior to this browser session
-    tab_info.already_trusted =
-      (state & Components.interfaces.nsIWebProgressListener.STATE_IS_SECURE)
-      && !(tab_info.is_override_cert);
-
-    if(tab_info.already_trusted) {
+    // if site secure, return
+    if(state & Components.interfaces.nsIWebProgressListener.STATE_IS_SECURE) {
       monkeysphere.log("main", "site cert already trusted by browser");
-      if(!check_good) {
+      // and force check not set
+      if(!monkeysphere.preferences.getBoolPref("monkeysphere.check_good_certificates")) {
 	monkeysphere.log("main", "preferences don't require check");
 	monkeysphere.setStatus(uri,
 			       monkeysphere.states.NEU,
 			       monkeysphere.messages.getString("statusNoQueryRequested"));
 	return;
       }
-    }
-    if(!tab_info.is_override_cert
-       && state
-       && Components.interfaces.nsIWebProgressListener.STATE_IS_INSECURE) {
+    // if site insecure continue
+    } else if(state & Components.interfaces.nsIWebProgressListener.STATE_IS_INSECURE) {
       monkeysphere.log("main", "state is INSECURE, override required");
-      tab_info.broken = true;
+    // else, unknown state
+    } else {
+      monkeysphere.log("main", "state UNKNOWN");
     }
 
-    // check if user permission required
-    var needs_perm = monkeysphere.root_prefs.getBoolPref("monkeysphere.require_user_permission");
-    if(needs_perm && !has_user_permission) {
+    // check if user permission required.  if so, call notification and return
+    if(monkeysphere.preferences.getBoolPref("monkeysphere.require_user_permission")
+       && !has_user_permission) {
       monkeysphere.log("main", "user permission required");
-      // NOTE: this function potentially calls the calling function!
       monkeysphere.notify.needsPermission(browser);
       monkeysphere.setStatus(uri,
 			     monkeysphere.states.NEU,
@@ -259,23 +256,14 @@ var monkeysphere = {
       return;
     }
 
-    // query the agent
+    // finally go ahead and query the agent
     monkeysphere.log("main", "querying validation agent");
-    var agent_result = monkeysphere.queryAgent(tab_info.cert, uri, browser);
-    if(!agent_result) {
-      monkeysphere.log("error", "validation agent error");
-      monkeysphere.notify.agentProblem(browser);
-      monkeysphere.setStatus(uri,
-			     monkeysphere.states.ERR,
-			     monkeysphere.messages.getString("agentError"));
-      return;
-    }
+    monkeysphere.queryAgent(browser, cert);
   },
 
   // query the validation agent
-  queryAgent: function(cert, uri) {
-    monkeysphere.log("main", "query: " + uri);
-    monkeysphere.log("main", "query: " + cert);
+  queryAgent: function(browser, cert) {
+    var uri = browser.currentURI;
 
     var certLength = {};
     var certData = {};
@@ -284,6 +272,7 @@ var monkeysphere = {
     cert.getRawDER(certLength, certData);
 
     var agentURL = "http://localhost:8901/reviewcert";
+    monkeysphere.log("query", "agentURL: " + agentURL);
 
     // "agent post data"
     var apd = {
@@ -294,15 +283,13 @@ var monkeysphere = {
 	data: certData
       }
     };
+    // make JSON query string
+    var query = JSON.stringify(apd);
 
-    monkeysphere.log("query", "agentURL: " + agentURL);
     monkeysphere.log("query", " apd.context: " + apd.context);
     monkeysphere.log("query", "     apd.uid: " + apd.uid);
     monkeysphere.log("query", "apd.pkc.type: " + apd.pkc.type);
     monkeysphere.log("query", "apd.pkc.data: " + apd.pkc.data);
-
-    // "context=" + args.context + "&uid=" + args.uid + "&cert=" + args.cert;
-    var query = JSON.stringify(args);
 
     monkeysphere.log("query", "creating http request to " + agentURL);
     var client = new XMLHttpRequest();
@@ -313,24 +300,118 @@ var monkeysphere = {
     client.setRequestHeader("Content-length", query.length);
     client.setRequestHeader("Connection", "close");
 
+    // FIXME: can extend 'client' to pass other variables
+
     // setup the state change function
     client.onreadystatechange = function() {
-      monkeysphere.onAgentStateChange(client);
+      monkeysphere.onAgentStateChange(client, browser, cert);
     };
 
     client.send(query);
     monkeysphere.log("query", "query sent");
-
-    // FIXME: can extend 'client' to pass other variables
-
-    return;
   },
 
   // when the XMLHttpRequest to the agent state changes
-  onAgentStateChange: function(client) {
-    monkeysphere.log("query", "readyState: " + client.readyState);
-    monkeysphere.log("query", "status: " + client.status);
-    monkeysphere.log("query", "response: " + client.responseText);
+  onAgentStateChange: function(client, browser, cert) {
+    monkeysphere.log("query", "state change: " + client.readyState);
+    monkeysphere.log("query", "   status: " + client.status);
+    monkeysphere.log("query", " response: " + client.responseText);
+
+    if (client.readyState == 4) {
+      if (client.status == 200) {
+	monkeysphere.securityOverride(browser, cert);
+      }
+    }
+  },
+
+  // browser security override function
+  securityOverride: function(browser, cert) {
+    monkeysphere.log("policy", "*** CERT SECURITY OVERRIDE REQUESTED ***");
+
+    var uri = browser.currentURI;
+    var ssl_status = monkeysphere.getInvalidCertSSLStatus(uri);
+    var override_service = Components.classes["@mozilla.org/security/certoverride;1"].getService(Components.interfaces.nsICertOverrideService);
+    var overrideBits = 0;
+
+    // set override bits
+    if(ssl_status.isUntrusted)
+      monkeysphere.log("policy", "flag: ERROR_UNTRUSTED");
+      overrideBits |= override_service.ERROR_UNTRUSTED;
+    if(ssl_status.isDomainMismatch)
+      monkeysphere.log("policy", "flag: ERROR_MISMATCH");
+      overrideBits |= override_service.ERROR_MISMATCH;
+    if(ssl_status.isNotValidAtThisTime)
+      monkeysphere.log("policy", "flag: ERROR_TIME");
+      overrideBits |= override_service.ERROR_TIME;
+
+    monkeysphere.log("policy", "  host:port: " + uri.asciiHost + ":" + uri.port);
+    monkeysphere.log("policy", "  cert: " + cert);
+    monkeysphere.log("policy", "  cert md5: " + cert.md5Fingerprint);
+    monkeysphere.log("policy", "  cert sha1: " + cert.sha1Fingerprint);
+    monkeysphere.log("policy", "  overrideBits: " + overrideBits);
+
+    var ret;
+    var aHashAlg = {};
+    var aFingerprint = {};
+    var aOverrideBits = {};
+    var aIsTemporary = {};
+
+    monkeysphere.log("policy", "current override state:");
+    ret =
+    override_service.getValidityOverride(uri.asciiHost, uri.port,
+					 aHashAlg,
+					 aFingerprint,
+					 aOverrideBits,
+					 aIsTemporary);
+    monkeysphere.log("policy", "  " + ret);
+    monkeysphere.log("policy", "  " + JSON.stringify(aFingerprint));
+    monkeysphere.log("policy", "  " + JSON.stringify(aOverrideBits));
+    monkeysphere.log("policy", "  " + JSON.stringify(aIsTemporary));
+
+    //monkeysphere.log("policy", "clear all overrides");
+    //override_service.clearValidityOverride(uri.asciiHost, uri.port);
+
+    monkeysphere.log("policy", "current override state:");
+    ret =
+    override_service.getValidityOverride(uri.asciiHost, uri.port,
+					 aHashAlg,
+					 aFingerprint,
+					 aOverrideBits,
+					 aIsTemporary);
+    monkeysphere.log("policy", "  " + ret);
+    monkeysphere.log("policy", "  " + JSON.stringify(aFingerprint));
+    monkeysphere.log("policy", "  " + JSON.stringify(aOverrideBits));
+    monkeysphere.log("policy", "  " + JSON.stringify(aIsTemporary));
+
+    monkeysphere.log("policy", "setting temporary override");
+    override_service.rememberValidityOverride(uri.asciiHost, uri.port,
+					      cert,
+					      overrideBits,
+					      true);
+
+    monkeysphere.log("policy", "current override state:");
+    ret =
+    override_service.getValidityOverride(uri.asciiHost, uri.port,
+					 aHashAlg,
+					 aFingerprint,
+					 aOverrideBits,
+					 aIsTemporary);
+    monkeysphere.log("policy", "  " + ret);
+    monkeysphere.log("policy", "  " + JSON.stringify(aFingerprint));
+    monkeysphere.log("policy", "  " + JSON.stringify(aOverrideBits));
+    monkeysphere.log("policy", "  " + JSON.stringify(aIsTemporary));
+
+    monkeysphere.log("policy", "browser reload");
+    //browser.loadURIWithFlags(uri.spec, overrideBits);
+    browser.loadURI(uri.spec);
+    return;
+
+    setTimeout(
+      function() {
+	//browser.loadURIWithFlags(uri.spec, overrideBits);
+	browser.loadURI(uri.spec);
+      },
+      25);
   },
 
 ////////////////////////////////////////////////////////////
@@ -338,16 +419,24 @@ var monkeysphere = {
 ////////////////////////////////////////////////////////////
 
   getCertificate: function(browser) {
-    var cert = monkeysphere.getValidCert(browser.securityUI);
-    if(!cert)
-      cert = monkeysphere.getInvalidCert(browser.currentURI);
-    if(!cert)
-      return null;
+    var cert = monkeysphere.getValidCert(browser);
+    if (cert) {
+      monkeysphere.log("main", "valid cert retrieved");
+    } else {
+      cert = monkeysphere.getInvalidCert(browser);
+      if (cert) {
+	monkeysphere.log("main", "invalid cert retrieved");
+      } else {
+	monkeysphere.log("error", "could not retrieve cert");
+	return null;
+      }
+    }
     return cert;
   },
 
   // gets current certificate, if it PASSED the browser check
-  getValidCert: function(ui) {
+  getValidCert: function(browser) {
+    var ui = browser.securityUI;
     try {
       ui.QueryInterface(Components.interfaces.nsISSLStatusProvider);
       if(!ui.SSLStatus)
@@ -359,8 +448,17 @@ var monkeysphere = {
     }
   },
 
+  getInvalidCert: function(browser) {
+    try {
+      var ssl_status = monkeysphere.getInvalidCertSSLStatus(browser.currentURI);
+      return ssl_status.QueryInterface(Components.interfaces.nsISSLStatus).serverCert;
+    } catch(e) {
+      return null;
+    }
+  },
+
   // gets current certificat, if it FAILED the security check
-  getInvalidCert: function(uri) {
+  getInvalidCertSSLStatus: function(uri) {
     var recentCertsService =
       Components.classes["@mozilla.org/security/recentbadcerts;1"]
       .getService(Components.interfaces.nsIRecentBadCertsService);
@@ -372,11 +470,11 @@ var monkeysphere = {
       port = 443;
 
     var hostWithPort = uri.host + ":" + port;
-    var gSSLStatus = recentCertsService.getRecentBadCert(hostWithPort);
-    if (!gSSLStatus)
+    var ssl_status = recentCertsService.getRecentBadCert(hostWithPort);
+    if (!ssl_status)
       return null;
 
-    return gSSLStatus.QueryInterface(Components.interfaces.nsISSLStatus).serverCert;
+    return ssl_status;
   },
 
 ////////////////////////////////////////////////////////////
@@ -384,21 +482,14 @@ var monkeysphere = {
 ////////////////////////////////////////////////////////////
 
   notify: {
-    // clear notification
-    clear: function(browser, value) {
-      try {
-	try{
-	  var notificationBox = browser.getNotificationBox();
-	} catch(e){
-	  return;
-	}
-	var oldNotification =
-	  notificationBox.getNotificationWithValue(value);
-	if(oldNotification != null)
-	  notificationBox.removeNotification(oldNotification);
-      } catch (err) {
-	monkeysphere.log("error","clearNotification error: " + err);
+
+    // return true and log if a given notification box is present
+    checkPresent: function(browser, value) {
+      if (browser.getNotificationBox().getNotificationWithValue(value)) {
+	monkeysphere.log("main", "notification " + name + " already present");
+	return true;
       }
+      return false;
     },
 
     // this is the drop down which is shown if preferences indicate
@@ -406,7 +497,10 @@ var monkeysphere = {
     needsPermission: function(browser) {
       var notificationBox = browser.getNotificationBox();
 
-      monkeysphere.notify.clear(browser, "Monkeysphere");
+      var value = "Monkeysphere:Permission";
+
+      if (monkeysphere.notify.checkPresent(browser,value))
+	return;
 
       var message = monkeysphere.messages.getString("needsPermission");
       var priority = notificationBox.PRIORITY_WARNING_HIGH;
@@ -434,8 +528,7 @@ var monkeysphere = {
 	  }
 	}
       ];
-      notificationBox.appendNotification(message, "Monkeysphere",
-					 null, priority, buttons);
+      notificationBox.appendNotification(message, value, null, priority, buttons);
     },
 
     // this is the drop down which is shown if there
@@ -443,7 +536,7 @@ var monkeysphere = {
     agentProblem: function(browser) {
       var notificationBox = browser.getNotificationBox();
 
-      monkeysphere.notify.clear(browser, "Monkeysphere");
+      var value = "Monkeysphere:AgentProblem";
 
       var message = monkeysphere.messages.getString("agentError");
       var priority = notificationBox.PRIORITY_CRITICAL_LOW;
@@ -457,15 +550,14 @@ var monkeysphere = {
 	  }
 	}
       ];
-      notificationBox.appendNotification(message, "Monkeysphere", null,
-					 priority, buttons);
+      notificationBox.appendNotification(message, value, null, priority, buttons);
     },
 
     // override a verification success with a monkeyspehre query
     override: function(browser) {
       var notificationBox = browser.getNotificationBox();
 
-      monkeysphere.notify.clear(browser, "Monkeysphere");
+      var value = "Monkeysphere:Override";
 
       var message = monkeysphere.messages.getString("verificationSuccess");
       var priority = notificationBox.PRIORITY_INFO_LOW;
@@ -479,22 +571,20 @@ var monkeysphere = {
 	  }
 	}
       ];
-      notificationBox.appendNotification(message, "Monkeysphere",
-					 null, priority, buttons);
+      notificationBox.appendNotification(message, value, null, priority, buttons);
     },
 
     // alert to failure to verify host
     failed: function(browser) {
       var notificationBox = browser.getNotificationBox();
 
-      monkeysphere.notifiy.clear(browser, "Monkeysphere");
+      var value = "Monkeysphere:Failed";
 
       var message = monkeysphere.messages.getString("unableToVerify");
       var priority = notificationBox.PRIORITY_CRITICAL_LOW;
       var buttons = null;
 
-      notificationBox.appendNotification(message, "Monkeysphere",
-					 null, priority, buttons);
+      notificationBox.appendNotification(message, value, null, priority, buttons);
     }
   }
 
