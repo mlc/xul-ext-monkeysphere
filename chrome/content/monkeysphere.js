@@ -204,7 +204,7 @@ var monkeysphere = {
     tab_info.broken = false;
     tab_info.cert = monkeysphere.getCertificate(browser);
 
-    // check site certificate
+    // get site certificate
     if(!tab_info.cert) {
       setStatus(uri,
       monkeysphere.states.ERR,
@@ -277,7 +277,60 @@ var monkeysphere = {
     monkeysphere.log("main", "query: " + uri);
     monkeysphere.log("main", "query: " + cert);
 
-    return null;
+    var certLength = {};
+    var certData = {};
+
+    // get certificate info
+    cert.getRawDER(certLength, certData);
+
+    var agentURL = "http://localhost:8901/reviewcert";
+
+    // "agent post data"
+    var apd = {
+      context: "https",
+      uid: uri.host,
+      pkc: {
+	type: "x509der",
+	data: certData
+      }
+    };
+
+    monkeysphere.log("query", "agentURL: " + agentURL);
+    monkeysphere.log("query", " apd.context: " + apd.context);
+    monkeysphere.log("query", "     apd.uid: " + apd.uid);
+    monkeysphere.log("query", "apd.pkc.type: " + apd.pkc.type);
+    monkeysphere.log("query", "apd.pkc.data: " + apd.pkc.data);
+
+    // "context=" + args.context + "&uid=" + args.uid + "&cert=" + args.cert;
+    var query = JSON.stringify(args);
+
+    monkeysphere.log("query", "creating http request to " + agentURL);
+    var client = new XMLHttpRequest();
+    client.open("POST", agentURL, true);
+
+    monkeysphere.log("query", "sending query: " + query);
+    client.setRequestHeader("Content-type", "application/json");
+    client.setRequestHeader("Content-length", query.length);
+    client.setRequestHeader("Connection", "close");
+
+    // setup the state change function
+    client.onreadystatechange = function() {
+      monkeysphere.onAgentStateChange(client);
+    };
+
+    client.send(query);
+    monkeysphere.log("query", "query sent");
+
+    // FIXME: can extend 'client' to pass other variables
+
+    return;
+  },
+
+  // when the XMLHttpRequest to the agent state changes
+  onAgentStateChange: function(client) {
+    monkeysphere.log("query", "readyState: " + client.readyState);
+    monkeysphere.log("query", "status: " + client.status);
+    monkeysphere.log("query", "response: " + client.responseText);
   },
 
 ////////////////////////////////////////////////////////////
@@ -308,10 +361,10 @@ var monkeysphere = {
 
   // gets current certificat, if it FAILED the security check
   getInvalidCert: function(uri) {
-    var recentCertsSvc =
+    var recentCertsService =
       Components.classes["@mozilla.org/security/recentbadcerts;1"]
       .getService(Components.interfaces.nsIRecentBadCertsService);
-    if (!recentCertsSvc)
+    if (!recentCertsService)
       return null;
 
     var port = uri.port;
@@ -319,7 +372,7 @@ var monkeysphere = {
       port = 443;
 
     var hostWithPort = uri.host + ":" + port;
-    var gSSLStatus = recentCertsSvc.getRecentBadCert(hostWithPort);
+    var gSSLStatus = recentCertsService.getRecentBadCert(hostWithPort);
     if (!gSSLStatus)
       return null;
 
