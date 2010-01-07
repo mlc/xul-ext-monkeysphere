@@ -334,15 +334,18 @@ var monkeysphere = {
     var overrideBits = 0;
 
     // set override bits
-    if(ssl_status.isUntrusted)
+    if(ssl_status.isUntrusted) {
       monkeysphere.log("policy", "flag: ERROR_UNTRUSTED");
       overrideBits |= override_service.ERROR_UNTRUSTED;
-    if(ssl_status.isDomainMismatch)
+    }
+    if(ssl_status.isDomainMismatch) {
       monkeysphere.log("policy", "flag: ERROR_MISMATCH");
       overrideBits |= override_service.ERROR_MISMATCH;
-    if(ssl_status.isNotValidAtThisTime)
+    }
+    if(ssl_status.isNotValidAtThisTime) {
       monkeysphere.log("policy", "flag: ERROR_TIME");
       overrideBits |= override_service.ERROR_TIME;
+    }
 
     monkeysphere.log("policy", "  host:port: " + uri.asciiHost + ":" + uri.port);
     monkeysphere.log("policy", "  cert: " + cert);
