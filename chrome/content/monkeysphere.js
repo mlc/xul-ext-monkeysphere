@@ -62,14 +62,14 @@ var monkeysphere = {
   ////////////////////////////////////////////////////////////
   // initialization function
   init: function() {
-    monkeysphere.log("main", "begin initialization");
+    monkeysphere.log("main", "-- begin initialization --");
     monkeysphere.setStatus(null, monkeysphere.states.NEU, "");
     monkeysphere.messages = document.getElementById("message_strings");
     getBrowser().addProgressListener(monkeysphere.listener,
 				     Components.interfaces.nsIWebProgress.NOTIFY_STATE_DOCUMENT);
     // FIXME: do we need this?  what is it for?
     //setTimeout(function (){ requeryAllTabs(gBrowser); }, 4000);
-    monkeysphere.log("main", "initialization complete");
+    monkeysphere.log("main", "-- initialization complete --");
   },
 
   ////////////////////////////////////////////////////////////
@@ -178,50 +178,69 @@ var monkeysphere = {
   // explicitly pressed a button to launch this query,
   // by default this is not the case
   updateStatus: function(browser, has_user_permission) {
+    monkeysphere.log("main", "==== updating status ====");
+
     if(!browser) {
       monkeysphere.log("error", "no browser!?!");
       return;
     }
+
+    // check uri
     var uri = browser.currentURI;
-    if(!uri) {
+    monkeysphere.log("main", "checking uri:");
+    if(uri) {
+      monkeysphere.log("main", " uri: " + uri.spec);
+    } else {
+      monkeysphere.log("main", " no uri data available");
       monkeysphere.setStatus(uri,
 			     monkeysphere.states.NEU,
 			     monkeysphere.messages.getString("statusNoData"));
       return;
     }
 
-    monkeysphere.log("main", "updating status: " + uri.spec);
-
     // check host
+    monkeysphere.log("main", "checking host:");
     try {
-      var ignore = uri.host;
+      monkeysphere.log("main", " host: " + uri.host);
     } catch(err) {
+      monkeysphere.log("main", " host not valid");
       monkeysphere.setStatus(uri,
 			     monkeysphere.states.NEU,
 			     monkeysphere.messages.getString("statusURLNotValid"));
       return;
     }
     if(!uri.host) {
-      monkeysphere.log("main", "uri host empty");
+      monkeysphere.log("main", " host empty");
       return;
     }
 
     // test for https
-    monkeysphere.log("main", "uri scheme: " + uri.scheme);
+    monkeysphere.log("main", "checking uri scheme: " + uri.scheme);
     if(uri.scheme != "https") {
-      monkeysphere.log("main", "uri scheme not https. ignoring");
+      monkeysphere.log("main", " uri scheme not https. ignoring");
       monkeysphere.setStatus(uri,
 			     monkeysphere.states.NEU,
 			     monkeysphere.messages.getFormattedString("statusNonHTTPS",
 								      [uri.scheme]));
       return;
+    } else {
+      monkeysphere.log("main", " scheme https. checking");
     }
 
     // check if exception has already been granted this session
-    monkeysphere.getOverrideStatus(uri);
+    monkeysphere.log("main", "checking override status:");
+    if(monkeysphere.getOverrideStatus(uri)) {
+      monkeysphere.log("main", " site already validated");
+      monkeysphere.setStatus(uri,
+			     monkeysphere.states.SEC,
+			     monkeysphere.messages.getString("statusValidated"));
+      return;
+    } else {
+      monkeysphere.log("main", " site not validated");
+    }
 
     // get site certificate
-    monkeysphere.log("main", "retrieving site certificate");
+    monkeysphere.log("main", "retrieving site certificate:");
     var cert = monkeysphere.getCertificate(browser);
     if(!cert) {
       monkeysphere.setStatus(uri,
@@ -231,29 +250,30 @@ var monkeysphere = {
       return;
     }
     var sha1 = cert.sha1Fingerprint;
-    monkeysphere.log("main", "  cert sha1: " + sha1);
+    monkeysphere.log("main", " cert sha1: " + sha1);
 
     // check browser state
+    monkeysphere.log("main", "checking security state:");
     var state = browser.securityUI.state;
-    monkeysphere.log("main", "browser state: " + state);
+    monkeysphere.log("main", " state: " + state);
 
     // if site secure, return
     if(state & Components.interfaces.nsIWebProgressListener.STATE_IS_SECURE) {
-      monkeysphere.log("main", "site cert already trusted by browser");
+      monkeysphere.log("main", " site cert already trusted by browser");
       // and force check not set
       if(!monkeysphere.preferences.getBoolPref("monkeysphere.check_good_certificates")) {
 	monkeysphere.log("main", "preferences don't require check");
 	monkeysphere.setStatus(uri,
 			       monkeysphere.states.NEU,
-			       monkeysphere.messages.getString("statusNoQueryRequested"));
+			       monkeysphere.messages.getString("statusAlreadyValid"));
 	return;
       }
     // if site insecure continue
     } else if(state & Components.interfaces.nsIWebProgressListener.STATE_IS_INSECURE) {
-      monkeysphere.log("main", "state is INSECURE, override required");
+      monkeysphere.log("main", " state INSECURE: override required");
     // else, unknown state
     } else {
-      monkeysphere.log("main", "state UNKNOWN");
+      monkeysphere.log("main", " state UNKNOWN");
     }
 
     // check if user permission required.  if so, call notification and return
@@ -268,7 +288,7 @@ var monkeysphere = {
     }
 
     // finally go ahead and query the agent
-    monkeysphere.log("main", "querying validation agent");
+    monkeysphere.log("main", "querying validation agent:");
     monkeysphere.queryAgent(browser, cert);
   },
 
@@ -298,10 +318,10 @@ var monkeysphere = {
     // make JSON query string
     var query = JSON.stringify(apd);
 
-    monkeysphere.log("query", " apd.context: " + apd.context);
-    monkeysphere.log("query", "     apd.uid: " + apd.uid);
-    monkeysphere.log("query", "apd.pkc.type: " + apd.pkc.type);
-    monkeysphere.log("query", "apd.pkc.data: " + apd.pkc.data);
+    monkeysphere.log("query", " context: " + apd.context);
+    monkeysphere.log("query", " uid: " + apd.uid);
+    monkeysphere.log("query", " pkc.type: " + apd.pkc.type);
+    monkeysphere.log("query", " pkc.data: " + apd.pkc.data);
 
     monkeysphere.log("query", "creating http request to " + agentURL);
     var client = new XMLHttpRequest();
@@ -311,8 +331,6 @@ var monkeysphere = {
     client.setRequestHeader("Content-type", "application/json");
     client.setRequestHeader("Content-length", query.length);
     client.setRequestHeader("Connection", "close");
-
-    // FIXME: can extend 'client' to pass other variables
 
     // setup the state change function
     client.onreadystatechange = function() {
@@ -327,7 +345,7 @@ var monkeysphere = {
   // when the XMLHttpRequest to the agent state changes
   onAgentStateChange: function(client, browser, cert) {
     monkeysphere.log("query", "state change: " + client.readyState);
-    monkeysphere.log("query", "   status: " + client.status);
+    monkeysphere.log("query", " status: " + client.status);
     monkeysphere.log("query", " response: " + client.responseText);
 
     if (client.readyState == 4) {
@@ -344,21 +362,23 @@ var monkeysphere = {
   ////////////////////////////////////////////////////////////
   // get current validity override status
   getOverrideStatus: function(uri) {
-    var ret;
+    // the status return is a bool, true for override set
+    var status;
     var aHashAlg = {};
     var aFingerprint = {};
     var aOverrideBits = {};
     var aIsTemporary = {};
     monkeysphere.log("debug", "current override state:");
-    ret = monkeysphere.override.getValidityOverride(uri.asciiHost, uri.port,
-						    aHashAlg,
-						    aFingerprint,
-						    aOverrideBits,
-						    aIsTemporary);
-    monkeysphere.log("debug", "  " + ret);
+    status = monkeysphere.override.getValidityOverride(uri.asciiHost, uri.port,
+						       aHashAlg,
+						       aFingerprint,
+						       aOverrideBits,
+						       aIsTemporary);
+    monkeysphere.log("debug", "  " + status);
     monkeysphere.log("debug", "  " + JSON.stringify(aFingerprint));
     monkeysphere.log("debug", "  " + JSON.stringify(aOverrideBits));
     monkeysphere.log("debug", "  " + JSON.stringify(aIsTemporary));
+    return status;
   },
 
   ////////////////////////////////////////////////////////////

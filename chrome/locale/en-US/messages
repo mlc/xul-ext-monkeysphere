@@ -16,5 +16,6 @@ statusNoData=Monkeysphere: browser provided an empty URI for this connection. Tr
 statusNonHTTPS=Monkeysphere: non-https website (scheme is '%1$S').
 statusWhitelist=Monkeysphere: %1$S is whitelisted.
 statusNoCert=Monkeysphere: unable to retrieve a certificate for %1$S
-statusNoQueryRequested=Monkeysphere: site already trusted. 
+statusAlreadyValid=Monkeysphere: site already trusted.
 statusNeedsPermission=Monkeysphere: permission required to query validation agent.
+statusValidated=Monkeysphere: this site has been Monkeysphere validated.
