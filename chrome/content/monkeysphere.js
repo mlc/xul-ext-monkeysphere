@@ -409,6 +409,11 @@ var monkeysphere = {
 	browser.loadURI(uri.spec);
       },
       25);
+
+    // monkeyspherize favicon text
+    monkeysphere.setFaviconText(monkeysphere.getFaviconText()
+				+ "\n\n"
+				+ "Monkeysphere validated");
   },
 
 ////////////////////////////////////////////////////////////
@@ -593,5 +598,20 @@ var monkeysphere = {
 
       notificationBox.appendNotification(message, value, null, priority, buttons);
     }
+  },
+
+////////////////////////////////////////////////////////////
+// FAVICON FUNCTIONS
+////////////////////////////////////////////////////////////
+
+  ////////////////////////////////////////////////////////////
+  getFaviconText: function() {
+    return document.getElementById("identity-box").tooltipText;
+  },
+
+  ////////////////////////////////////////////////////////////
+  //Sets the tooltip and the text of the favicon popup on https sites
+  setFaviconText: function(str) {
+    document.getElementById("identity-box").tooltipText = str;
   }
 };
