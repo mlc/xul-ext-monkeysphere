@@ -11,10 +11,14 @@ var monkeysphere = {
   // get extension preferences
   preferences: Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefBranchInternal),
 
+  // override service class
+  override: Components.classes["@mozilla.org/security/certoverride;1"].getService(Components.interfaces.nsICertOverrideService),
+
 ////////////////////////////////////////////////////////////
 // LOG FUNCTIONS
 ////////////////////////////////////////////////////////////
 
+  ////////////////////////////////////////////////////////////
   log: function(flag, line) {
     var log_all = true;
 
@@ -55,6 +59,7 @@ var monkeysphere = {
 // INITIALIZATION
 ////////////////////////////////////////////////////////////
 
+  ////////////////////////////////////////////////////////////
   // initialization function
   init: function() {
     monkeysphere.log("main", "begin initialization");
@@ -67,6 +72,7 @@ var monkeysphere = {
     monkeysphere.log("main", "initialization complete");
   },
 
+  ////////////////////////////////////////////////////////////
   // FIXME: what is this functions for?  why do we need it?
   requeryAllTabs: function(b) {
     var num = b.browsers.length;
@@ -120,6 +126,7 @@ var monkeysphere = {
 // STATUS FUNCTION
 ////////////////////////////////////////////////////////////
 
+  ////////////////////////////////////////////////////////////
   // set the status
   setStatus: function(uri,state, tooltip) {
     if(uri != null && uri != window.gBrowser.currentURI) {
@@ -165,6 +172,7 @@ var monkeysphere = {
 // UPDATE AND QUERY FUNCTIONS
 ////////////////////////////////////////////////////////////
 
+  ////////////////////////////////////////////////////////////
   // Updates the status of the current page
   // 'has_user_permission' indicates whether the user
   // explicitly pressed a button to launch this query,
@@ -208,6 +216,9 @@ var monkeysphere = {
 								      [uri.scheme]));
       return;
     }
+
+    // check if exception has already been granted this session
+    monkeysphere.getOverrideStatus(uri);
 
     // get site certificate
     monkeysphere.log("main", "retrieving site certificate");
@@ -261,6 +272,7 @@ var monkeysphere = {
     monkeysphere.queryAgent(browser, cert);
   },
 
+  ////////////////////////////////////////////////////////////
   // query the validation agent
   queryAgent: function(browser, cert) {
     var uri = browser.currentURI;
@@ -311,6 +323,7 @@ var monkeysphere = {
     monkeysphere.log("query", "query sent");
   },
 
+  ////////////////////////////////////////////////////////////
   // when the XMLHttpRequest to the agent state changes
   onAgentStateChange: function(client, browser, cert) {
     monkeysphere.log("query", "state change: " + client.readyState);
@@ -324,27 +337,51 @@ var monkeysphere = {
     }
   },
 
+////////////////////////////////////////////////////////////
+// OVERRIDE FUNCTIONS
+////////////////////////////////////////////////////////////
+
+  ////////////////////////////////////////////////////////////
+  // get current validity override status
+  getOverrideStatus: function(uri) {
+    var ret;
+    var aHashAlg = {};
+    var aFingerprint = {};
+    var aOverrideBits = {};
+    var aIsTemporary = {};
+    monkeysphere.log("debug", "current override state:");
+    ret = monkeysphere.override.getValidityOverride(uri.asciiHost, uri.port,
+						    aHashAlg,
+						    aFingerprint,
+						    aOverrideBits,
+						    aIsTemporary);
+    monkeysphere.log("debug", "  " + ret);
+    monkeysphere.log("debug", "  " + JSON.stringify(aFingerprint));
+    monkeysphere.log("debug", "  " + JSON.stringify(aOverrideBits));
+    monkeysphere.log("debug", "  " + JSON.stringify(aIsTemporary));
+  },
+
+  ////////////////////////////////////////////////////////////
   // browser security override function
   securityOverride: function(browser, cert) {
     monkeysphere.log("policy", "*** CERT SECURITY OVERRIDE REQUESTED ***");
 
     var uri = browser.currentURI;
     var ssl_status = monkeysphere.getInvalidCertSSLStatus(uri);
-    var override_service = Components.classes["@mozilla.org/security/certoverride;1"].getService(Components.interfaces.nsICertOverrideService);
     var overrideBits = 0;
 
     // set override bits
     if(ssl_status.isUntrusted) {
       monkeysphere.log("policy", "flag: ERROR_UNTRUSTED");
-      overrideBits |= override_service.ERROR_UNTRUSTED;
+      overrideBits |= monkeysphere.override.ERROR_UNTRUSTED;
     }
     if(ssl_status.isDomainMismatch) {
       monkeysphere.log("policy", "flag: ERROR_MISMATCH");
-      overrideBits |= override_service.ERROR_MISMATCH;
+      overrideBits |= monkeysphere.override.ERROR_MISMATCH;
     }
     if(ssl_status.isNotValidAtThisTime) {
       monkeysphere.log("policy", "flag: ERROR_TIME");
-      overrideBits |= override_service.ERROR_TIME;
+      overrideBits |= monkeysphere.override.ERROR_TIME;
     }
 
     monkeysphere.log("policy", "  host:port: " + uri.asciiHost + ":" + uri.port);
@@ -353,65 +390,22 @@ var monkeysphere = {
     monkeysphere.log("policy", "  cert sha1: " + cert.sha1Fingerprint);
     monkeysphere.log("policy", "  overrideBits: " + overrideBits);
 
-    var ret;
-    var aHashAlg = {};
-    var aFingerprint = {};
-    var aOverrideBits = {};
-    var aIsTemporary = {};
-
-    monkeysphere.log("policy", "current override state:");
-    ret =
-    override_service.getValidityOverride(uri.asciiHost, uri.port,
-					 aHashAlg,
-					 aFingerprint,
-					 aOverrideBits,
-					 aIsTemporary);
-    monkeysphere.log("policy", "  " + ret);
-    monkeysphere.log("policy", "  " + JSON.stringify(aFingerprint));
-    monkeysphere.log("policy", "  " + JSON.stringify(aOverrideBits));
-    monkeysphere.log("policy", "  " + JSON.stringify(aIsTemporary));
-
-    //monkeysphere.log("policy", "clear all overrides");
-    //override_service.clearValidityOverride(uri.asciiHost, uri.port);
-
-    monkeysphere.log("policy", "current override state:");
-    ret =
-    override_service.getValidityOverride(uri.asciiHost, uri.port,
-					 aHashAlg,
-					 aFingerprint,
-					 aOverrideBits,
-					 aIsTemporary);
-    monkeysphere.log("policy", "  " + ret);
-    monkeysphere.log("policy", "  " + JSON.stringify(aFingerprint));
-    monkeysphere.log("policy", "  " + JSON.stringify(aOverrideBits));
-    monkeysphere.log("policy", "  " + JSON.stringify(aIsTemporary));
+    // check override status
+    monkeysphere.getOverrideStatus(uri);
 
     monkeysphere.log("policy", "setting temporary override");
-    override_service.rememberValidityOverride(uri.asciiHost, uri.port,
-					      cert,
-					      overrideBits,
-					      true);
+    monkeysphere.override.rememberValidityOverride(uri.asciiHost, uri.port,
+						   cert,
+						   overrideBits,
+						   true);
 
-    monkeysphere.log("policy", "current override state:");
-    ret =
-    override_service.getValidityOverride(uri.asciiHost, uri.port,
-					 aHashAlg,
-					 aFingerprint,
-					 aOverrideBits,
-					 aIsTemporary);
-    monkeysphere.log("policy", "  " + ret);
-    monkeysphere.log("policy", "  " + JSON.stringify(aFingerprint));
-    monkeysphere.log("policy", "  " + JSON.stringify(aOverrideBits));
-    monkeysphere.log("policy", "  " + JSON.stringify(aIsTemporary));
+    // check override status
+    monkeysphere.getOverrideStatus(uri);
 
     monkeysphere.log("policy", "browser reload");
-    //browser.loadURIWithFlags(uri.spec, overrideBits);
-    browser.loadURI(uri.spec);
-    return;
-
+    // FIXME: why the "timeout"?  what's it for?
     setTimeout(
       function() {
-	//browser.loadURIWithFlags(uri.spec, overrideBits);
 	browser.loadURI(uri.spec);
       },
       25);
@@ -421,6 +415,7 @@ var monkeysphere = {
 // CERT FUNCTIONS
 ////////////////////////////////////////////////////////////
 
+  ////////////////////////////////////////////////////////////
   getCertificate: function(browser) {
     var cert = monkeysphere.getValidCert(browser);
     if (cert) {
@@ -437,6 +432,7 @@ var monkeysphere = {
     return cert;
   },
 
+  ////////////////////////////////////////////////////////////
   // gets current certificate, if it PASSED the browser check
   getValidCert: function(browser) {
     var ui = browser.securityUI;
@@ -451,6 +447,7 @@ var monkeysphere = {
     }
   },
 
+  ////////////////////////////////////////////////////////////
   getInvalidCert: function(browser) {
     try {
       var ssl_status = monkeysphere.getInvalidCertSSLStatus(browser.currentURI);
@@ -460,6 +457,7 @@ var monkeysphere = {
     }
   },
 
+  ////////////////////////////////////////////////////////////
   // gets current certificat, if it FAILED the security check
   getInvalidCertSSLStatus: function(uri) {
     var recentCertsService =
@@ -484,8 +482,10 @@ var monkeysphere = {
 // NOTIFICATION FUNCTIONS
 ////////////////////////////////////////////////////////////
 
+  ////////////////////////////////////////////////////////////
   notify: {
 
+    /////////////////////////////////////////////////////////
     // return true and log if a given notification box is present
     checkPresent: function(browser, value) {
       if (browser.getNotificationBox().getNotificationWithValue(value)) {
@@ -495,6 +495,7 @@ var monkeysphere = {
       return false;
     },
 
+    /////////////////////////////////////////////////////////
     // this is the drop down which is shown if preferences indicate
     // that queries require user permission
     needsPermission: function(browser) {
@@ -534,6 +535,7 @@ var monkeysphere = {
       notificationBox.appendNotification(message, value, null, priority, buttons);
     },
 
+    /////////////////////////////////////////////////////////
     // this is the drop down which is shown if there
     // is a problem with the validation agent
     agentProblem: function(browser) {
@@ -556,7 +558,8 @@ var monkeysphere = {
       notificationBox.appendNotification(message, value, null, priority, buttons);
     },
 
-    // override a verification success with a monkeyspehre query
+    ////////////////////////////////////////////////////////
+    // override verification success notification
     override: function(browser) {
       var notificationBox = browser.getNotificationBox();
 
@@ -577,6 +580,7 @@ var monkeysphere = {
       notificationBox.appendNotification(message, value, null, priority, buttons);
     },
 
+    ////////////////////////////////////////////////////////
     // alert to failure to verify host
     failed: function(browser) {
       var notificationBox = browser.getNotificationBox();
@@ -590,5 +594,4 @@ var monkeysphere = {
       notificationBox.appendNotification(message, value, null, priority, buttons);
     }
   }
-
 };
