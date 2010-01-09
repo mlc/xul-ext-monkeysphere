@@ -28,11 +28,16 @@
     </em:targetApplication>
 
     <!-- here is an example for future localizations ; 
-         em:description, em:creator 
+         em: name, em:description, em:creator 
          should probably be overridden -->
     <em:localized> 
       <Description> 
 	<em:locale>en-US</em:locale> 
+        <em:name>Monkeysphere</em:name>
+        <em:description>Consult Monkeysphere validation-agent
+          for validation of x.509 certificates via the OpenPGP Web of Trust.
+        </em:description>
+        <em:creator>The Monkeysphere Project</em:creator>
       </Description> 
     </em:localized> 
  </Description>
