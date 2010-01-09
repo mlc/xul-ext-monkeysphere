@@ -511,7 +511,7 @@ var monkeysphere = {
     // return true and log if a given notification box is present
     checkPresent: function(browser, value) {
       if (browser.getNotificationBox().getNotificationWithValue(value)) {
-	monkeysphere.log("main", "notification " + name + " already present");
+	monkeysphere.log("main", "notification '" + value + "' already present");
 	return true;
       }
       return false;
