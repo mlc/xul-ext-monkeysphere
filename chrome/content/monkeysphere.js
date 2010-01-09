@@ -344,7 +344,17 @@ var monkeysphere = {
     if (client.readyState == 4) {
       if (client.status == 200) {
 	var response = JSON.parse(client.responseText);
-	monkeysphere.securityOverride(browser, cert);
+        if (response.valid) {
+          monkeysphere.log("query", "computer says yes");
+	  monkeysphere.securityOverride(browser, cert);
+        } else {
+          monkeysphere.log("query", "computer says no");
+        }
+        if (response.message) {
+          monkeysphere.log("query", "computer also says:" + response.message);
+	}
+      } else {
+	alert("Your security agent didn't work right.");
       }
     }
   },
