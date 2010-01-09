@@ -321,9 +321,9 @@ var monkeysphere = {
 
     //monkeysphere.log("query", "sending query: " + query);
     monkeysphere.log("query", "sending query:");
-    client.setRequestHeader(" Content-type", "application/json");
-    client.setRequestHeader(" Content-length", query.length);
-    client.setRequestHeader(" Connection", "close");
+    client.setRequestHeader("Content-Type", "application/json");
+    client.setRequestHeader("Content-Length", query.length);
+    client.setRequestHeader("Connection", "close");
 
     // setup the state change function
     client.onreadystatechange = function() {
