@@ -1,0 +1,27 @@
+Make extension development profile (or separate user account):
+
+https://developer.mozilla.org/en/Setting_up_extension_development_environment
+
+The about:config preference setting mention here are useful,
+particularly 'browser.dom.window.dump.enabled', which is what spits
+out dump() calls to the console
+
+Assume profile called 'extdev-msva', and the profile dir is:
+
+~/.mozilla/firefox/foo.extdev-msva
+
+Assume your extension development directory is:
+
+~/msva/xul-ext
+
+Add extension reference file to your profile extensions directory:
+
+servo:~ 0$ cat ~/.mozilla/firefox/hgl2x2er.extdev-msva/extensions/monkeysphere@monkeysphere.info 
+/home/user/msva/xul-ext/
+servo:~ 0$ 
+
+MUST HAVE TRAILING SLASH
+
+Example for iceweasel testing:
+
+while true; do iceweasel -P extdev-msva -no-remote ; done
