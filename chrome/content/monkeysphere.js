@@ -88,35 +88,38 @@ var monkeysphere = {
 // EVENT LISTENER
 ////////////////////////////////////////////////////////////
 
+  // https://developer.mozilla.org/en/nsIWebProgressListener
   listener: {
-    onLocationChange:
-      function(aWebProgress, aRequest, aURI) {
-	monkeysphere.log("main", "listener: location change: " + aURI.spec);
-	try {
-	  monkeysphere.updateStatus(gBrowser, false);
-	} catch(err) {
-	  monkeysphere.log("error", "listener: location change: " + err);
-	  monkeysphere.setStatus(monkeysphere.states.ERR,
-				 monkeysphere.messages.getFormattedString("internalError",
-									  [err]));
-	}
-      },
-    onStateChange:
-      function(aWebProgress, aRequest, aFlag, aStatus) {
-	var uri = gBrowser.currentURI;
-	monkeysphere.log("main", "listener: state change " + uri.spec);
-	if(!aFlag || !Components.interfaces.nsIWebProgressListener.STATE_STOP)
-	  return;
-	try {
-	  monkeysphere.updateStatus(gBrowser, false);
-	} catch (err) {
-	  monkeysphere.log("error", "listener: state change: " + err);
-	  monkeysphere.setStatus(monkeysphere.states.ERR,
-				 monkeysphere.messages.getFormattedString("internalError",
-									  [err]));
-	}
-      },
-    onSecurityChange: function() { }, // FIXME: should we be looking at this too?
+    onLocationChange: function(aWebProgress, aRequest, aURI) {
+      monkeysphere.log("main", "++++ listener: location change: " + aURI.spec + " ++++");
+      try {
+	monkeysphere.updateStatus(gBrowser, false);
+      } catch(err) {
+	monkeysphere.log("error", "listener: location change: " + err);
+      monkeysphere.setStatus(monkeysphere.states.ERR,
+			     monkeysphere.messages.getFormattedString("internalError",
+								      [err]));
+      }
+    },
+    // FIXME: do we really need to listen to this?
+    onStateChange: function(aWebProgress, aRequest, aFlag, aStatus) {
+      // FIXME: just return for now
+      return;
+
+      var uri = gBrowser.currentURI;
+      monkeysphere.log("main", "++++ listener: state change " + uri.spec + " ++++");
+      if(!aFlag || !Components.interfaces.nsIWebProgressListener.STATE_STOP)
+	return;
+      try {
+	monkeysphere.updateStatus(gBrowser, false);
+      } catch (err) {
+	monkeysphere.log("error", "listener: state change: " + err);
+      monkeysphere.setStatus(monkeysphere.states.ERR,
+			     monkeysphere.messages.getFormattedString("internalError",
+								      [err]));
+      }
+    },
+    onSecurityChange: function() { },
     onStatusChange: function() { },
     onProgressChange: function() { },
     onLinkIconAvailable: function() { }
