@@ -225,7 +225,7 @@ var monkeysphere = {
 
     // check if exception has already been granted this session
     monkeysphere.log("main", "checking override status:");
-    if(monkeysphere.getOverrideStatus(uri)) {
+    if(monkeysphere.checkOverrideStatus(uri)) {
       monkeysphere.log("main", " site already validated");
       monkeysphere.setStatus(monkeysphere.states.SEC,
 			     monkeysphere.messages.getString("statusValidated"));
@@ -353,14 +353,14 @@ var monkeysphere = {
 
   ////////////////////////////////////////////////////////////
   // get current validity override status
-  getOverrideStatus: function(uri) {
+  checkOverrideStatus: function(uri) {
     // the status return is a bool, true for override set
     var status;
     var aHashAlg = {};
     var aFingerprint = {};
     var aOverrideBits = {};
     var aIsTemporary = {};
-    monkeysphere.log("debug", "current override state:");
+    monkeysphere.log("debug", "current override status:");
     status = monkeysphere.override.getValidityOverride(uri.asciiHost, uri.port,
 						       aHashAlg,
 						       aFingerprint,
@@ -403,7 +403,7 @@ var monkeysphere = {
     monkeysphere.log("policy", "  overrideBits: " + overrideBits);
 
     // check override status
-    monkeysphere.getOverrideStatus(uri);
+    monkeysphere.checkOverrideStatus(uri);
 
     monkeysphere.log("policy", "setting temporary override");
     monkeysphere.override.rememberValidityOverride(uri.asciiHost, uri.port,
@@ -412,7 +412,7 @@ var monkeysphere = {
 						   true);
 
     // check override status
-    monkeysphere.getOverrideStatus(uri);
+    monkeysphere.checkOverrideStatus(uri);
 
     monkeysphere.log("policy", "browser reload");
     // FIXME: why the "timeout"?  what's it for?
