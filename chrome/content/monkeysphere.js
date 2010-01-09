@@ -14,6 +14,7 @@ var monkeysphere = {
   preferences: Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefBranchInternal),
 
   // override service class
+  // http://www.oxymoronical.com/experiments/xpcomref/applications/Firefox/3.5/interfaces/nsICertOverrideService
   override: Components.classes["@mozilla.org/security/certoverride;1"].getService(Components.interfaces.nsICertOverrideService),
 
 ////////////////////////////////////////////////////////////
@@ -289,14 +290,13 @@ var monkeysphere = {
   queryAgent: function(browser, cert) {
     var uri = browser.currentURI;
 
-    var certLength = {};
-    var certData = {};
+    var agent_url = "http://localhost:8901/reviewcert";
+    monkeysphere.log("query", "agent_url: " + agent_url);
 
     // get certificate info
-    cert.getRawDER(certLength, certData);
-
-    var agentURL = "http://localhost:8901/reviewcert";
-    monkeysphere.log("query", "agentURL: " + agentURL);
+    var cert_length = {};
+    var dummy = {};
+    var cert_data = cert.getRawDER(cert_length, dummy);
 
     // "agent post data"
     var apd = {
@@ -304,25 +304,26 @@ var monkeysphere = {
       uid: uri.host,
       pkc: {
 	type: "x509der",
-	data: certData
+	data: cert_data
       }
     };
-    // make JSON query string
-    var query = JSON.stringify(apd);
-
     monkeysphere.log("query", " context: " + apd.context);
     monkeysphere.log("query", " uid: " + apd.uid);
     monkeysphere.log("query", " pkc.type: " + apd.pkc.type);
-    monkeysphere.log("query", " pkc.data: " + apd.pkc.data);
+    //monkeysphere.log("query", " pkc.data: " + apd.pkc.data); // this can be big
 
-    monkeysphere.log("query", "creating http request to " + agentURL);
+    // make JSON query string
+    var query = JSON.stringify(apd);
+
+    monkeysphere.log("query", "creating http request to " + agent_url);
     var client = new XMLHttpRequest();
-    client.open("POST", agentURL, true);
+    client.open("POST", agent_url, true);
 
-    monkeysphere.log("query", "sending query: " + query);
-    client.setRequestHeader("Content-type", "application/json");
-    client.setRequestHeader("Content-length", query.length);
-    client.setRequestHeader("Connection", "close");
+    //monkeysphere.log("query", "sending query: " + query);
+    monkeysphere.log("query", "sending query:");
+    client.setRequestHeader(" Content-type", "application/json");
+    client.setRequestHeader(" Content-length", query.length);
+    client.setRequestHeader(" Connection", "close");
 
     // setup the state change function
     client.onreadystatechange = function() {
@@ -342,6 +343,7 @@ var monkeysphere = {
 
     if (client.readyState == 4) {
       if (client.status == 200) {
+	var response = JSON.parse(client.responseText);
 	monkeysphere.securityOverride(browser, cert);
       }
     }
@@ -435,18 +437,19 @@ var monkeysphere = {
   ////////////////////////////////////////////////////////////
   getCertificate: function(browser) {
     var cert = monkeysphere.getValidCert(browser);
-    monkeysphere.log("main", "cert: " + cert);
     if (cert) {
       monkeysphere.log("main", "valid cert retrieved");
-      return cert;
-    }
-    cert = monkeysphere.getInvalidCert(browser);
-    if (cert) {
+    } else {
+      cert = monkeysphere.getInvalidCert(browser);
+      if (cert) {
 	monkeysphere.log("main", "invalid cert retrieved");
-	return cert;
+      } else {
+	monkeysphere.log("error", "could not retrieve cert");
+	cert = null;
+      }
     }
-    monkeysphere.log("error", "could not retrieve cert");
-    return null;
+    monkeysphere.printCertInfo(cert);
+    return cert;
   },
 
   ////////////////////////////////////////////////////////////
@@ -454,11 +457,7 @@ var monkeysphere = {
   getValidCert: function(browser) {
     try {
       var ui = browser.securityUI;
-      var SSLStatusProvider = ui.QueryInterface(Components.interfaces.nsISSLStatusProvider);
-      if(!ui.SSLStatus)
-	monkeysphere.log("error", "no SSLStatus: " + SSLStatusProvider);
-	return null;
-      var cert = ui.SSLStatus.serverCert;
+      var cert = ui.QueryInterface(Components.interfaces.nsISSLStatusProvider).serverCert;
     } catch (e) {
       monkeysphere.log("error", e);
       return null;
@@ -498,6 +497,55 @@ var monkeysphere = {
       return null;
 
     return ssl_status;
+  },
+
+  // Print SSL certificate details
+  // https://developer.mozilla.org/En/How_to_check_the_security_state_of_an_XMLHTTPRequest_over_SSL
+  printCertInfo: function(cert) {
+    //if (secInfo instanceof Ci.nsISSLStatusProvider) {
+    //var cert = secInfo.QueryInterface(Ci.nsISSLStatusProvider).
+    //SSLStatus.QueryInterface(Ci.nsISSLStatus).serverCert;
+
+    var verificationResult = cert.verifyForUsage(Ci.nsIX509Cert.CERT_USAGE_SSLServer);
+    monkeysphere.log("debug", "certificate status:");
+    monkeysphere.log("debug", "verification: ");
+    switch (verificationResult) {
+    case Ci.nsIX509Cert.VERIFIED_OK:
+      monkeysphere.log("debug", "OK");
+      break;
+    case Ci.nsIX509Cert.NOT_VERIFIED_UNKNOWN:
+      monkeysphere.log("debug", "\tnot verfied/unknown");
+      break;
+    case Ci.nsIX509Cert.CERT_REVOKED:
+      monkeysphere.log("debug", "\trevoked");
+      break;
+    case Ci.nsIX509Cert.CERT_EXPIRED:
+      monkeysphere.log("debug", "\texpired");
+      break;
+    case Ci.nsIX509Cert.CERT_NOT_TRUSTED:
+      monkeysphere.log("debug", "\tnot trusted");
+      break;
+    case Ci.nsIX509Cert.ISSUER_NOT_TRUSTED:
+      monkeysphere.log("debug", "\tissuer not trusted");
+      break;
+    case Ci.nsIX509Cert.ISSUER_UNKNOWN:
+      monkeysphere.log("debug", "\tissuer unknown");
+      break;
+    case Ci.nsIX509Cert.INVALID_CA:
+      monkeysphere.log("debug", "\tinvalid CA");
+      break;
+    default:
+      monkeysphere.log("debug", "\tunexpected failure");
+      break;
+    }
+    monkeysphere.log("debug", "Common Name (CN) = " + cert.commonName);
+    monkeysphere.log("debug", "Organisation = " + cert.organization);
+    monkeysphere.log("debug", "Issuer = " + cert.issuerOrganization);
+    monkeysphere.log("debug", "SHA1 fingerprint = " + cert.sha1Fingerprint);
+
+    var validity = cert.validity.QueryInterface(Ci.nsIX509CertValidity);
+    monkeysphere.log("debug", "\tValid from " + validity.notBeforeGMT);
+    monkeysphere.log("debug", "\tValid until " + validity.notAfterGMT);
   },
 
 ////////////////////////////////////////////////////////////
