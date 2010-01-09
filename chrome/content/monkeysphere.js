@@ -2,11 +2,13 @@
 var monkeysphere = {
 
   states: {
-    ERR: -1,
-    SEC: 0,
-    INS: 1,
-    NEU: 2
+    ERR: -1, // there was a monkeysphere processing error
+    NEU:  0, // monkeysphere is neutral on this site
+    SEC:  1, // monkeysphere processed and validated
+    INS:  2 // monkeysphere processed and not validated
   },
+
+  TRANS: false, // bool to indicate state
 
   // get extension preferences
   preferences: Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefBranchInternal),
@@ -63,12 +65,12 @@ var monkeysphere = {
   // initialization function
   init: function() {
     monkeysphere.log("main", "-- begin initialization --");
-    monkeysphere.setStatus(null, monkeysphere.states.NEU, "");
+    monkeysphere.setStatus(monkeysphere.states.NEU, "Monkeysphere");
     monkeysphere.messages = document.getElementById("message_strings");
     getBrowser().addProgressListener(monkeysphere.listener,
 				     Components.interfaces.nsIWebProgress.NOTIFY_STATE_DOCUMENT);
     // FIXME: do we need this?  what is it for?
-    //setTimeout(function (){ requeryAllTabs(gBrowser); }, 4000);
+    //setTimeout(function (){ monkeysphere.requeryAllTabs(gBrowser); }, 4000);
     monkeysphere.log("main", "-- initialization complete --");
   },
 
@@ -94,8 +96,7 @@ var monkeysphere = {
 	  monkeysphere.updateStatus(gBrowser, false);
 	} catch(err) {
 	  monkeysphere.log("error", "listener: location change: " + err);
-	  monkeysphere.setStatus(aURI,
-				 monkeysphere.states.ERR,
+	  monkeysphere.setStatus(monkeysphere.states.ERR,
 				 monkeysphere.messages.getFormattedString("internalError",
 									  [err]));
 	}
@@ -110,8 +111,7 @@ var monkeysphere = {
 	  monkeysphere.updateStatus(gBrowser, false);
 	} catch (err) {
 	  monkeysphere.log("error", "listener: state change: " + err);
-	  monkeysphere.setStatus(uri,
-				 monkeysphere.states.ERR,
+	  monkeysphere.setStatus(monkeysphere.states.ERR,
 				 monkeysphere.messages.getFormattedString("internalError",
 									  [err]));
 	}
@@ -128,11 +128,7 @@ var monkeysphere = {
 
   ////////////////////////////////////////////////////////////
   // set the status
-  setStatus: function(uri,state, tooltip) {
-    if(uri != null && uri != window.gBrowser.currentURI) {
-      monkeysphere.log("error","setStatus: uri missing");
-      return;
-    }
+  setStatus: function(state, tooltip) {
     if(!tooltip) {
       tooltip = "Monkeysphere";
     }
@@ -148,24 +144,24 @@ var monkeysphere = {
 
     t.setAttribute("tooltiptext", tooltip);
     switch(state){
+      case monkeysphere.states.ERR:
+	monkeysphere.log("main", "set status: ERR");
+	i.setAttribute("src", "chrome://monkeysphere/content/error.png");
+	break;
+      case monkeysphere.states.NEU:
+	monkeysphere.log("main", "set status: NEU");
+	i.setAttribute("src", "chrome://monkeysphere/content/default.png");
+	break;
       case monkeysphere.states.SEC:
-	monkeysphere.log("main", "set status: secure");
+	monkeysphere.log("main", "set status: SEC");
 	i.setAttribute("src", "chrome://monkeysphere/content/good.png");
 	break;
       case monkeysphere.states.INS:
-	monkeysphere.log("main", "set status: unsecure");
+	monkeysphere.log("main", "set status: INS");
 	i.setAttribute("src", "chrome://monkeysphere/content/bad.png");
 	break;
-      case monkeysphere.states.NEU:
-	monkeysphere.log("main", "set status: neutral");
-	i.setAttribute("src", "chrome://monkeysphere/content/default.png");
-	break;
-      case monkeysphere.states.ERR:
-	monkeysphere.log("main", "set status: error");
-	i.setAttribute("src", "chrome://monkeysphere/content/error.png");
-	break;
     }
-    monkeysphere.log("main", "tooltip: " + tooltip);
+    monkeysphere.log("main", "set tooltip: \"" + tooltip + "\"");
   },
 
 ////////////////////////////////////////////////////////////
@@ -192,8 +188,7 @@ var monkeysphere = {
       monkeysphere.log("main", " uri: " + uri.spec);
     } else {
       monkeysphere.log("main", " no uri data available");
-      monkeysphere.setStatus(uri,
-			     monkeysphere.states.NEU,
+      monkeysphere.setStatus(monkeysphere.states.NEU,
 			     monkeysphere.messages.getString("statusNoData"));
       return;
     }
@@ -204,8 +199,7 @@ var monkeysphere = {
       monkeysphere.log("main", " host: " + uri.host);
     } catch(err) {
       monkeysphere.log("main", " host not valid");
-      monkeysphere.setStatus(uri,
-			     monkeysphere.states.NEU,
+      monkeysphere.setStatus(monkeysphere.states.NEU,
 			     monkeysphere.messages.getString("statusURLNotValid"));
       return;
     }
@@ -218,8 +212,7 @@ var monkeysphere = {
     monkeysphere.log("main", "checking uri scheme: " + uri.scheme);
     if(uri.scheme != "https") {
       monkeysphere.log("main", " uri scheme not https. ignoring");
-      monkeysphere.setStatus(uri,
-			     monkeysphere.states.NEU,
+      monkeysphere.setStatus(monkeysphere.states.NEU,
 			     monkeysphere.messages.getFormattedString("statusNonHTTPS",
 								      [uri.scheme]));
       return;
@@ -231,8 +224,7 @@ var monkeysphere = {
     monkeysphere.log("main", "checking override status:");
     if(monkeysphere.getOverrideStatus(uri)) {
       monkeysphere.log("main", " site already validated");
-      monkeysphere.setStatus(uri,
-			     monkeysphere.states.SEC,
+      monkeysphere.setStatus(monkeysphere.states.SEC,
 			     monkeysphere.messages.getString("statusValidated"));
       return;
     } else {
@@ -243,8 +235,7 @@ var monkeysphere = {
     monkeysphere.log("main", "retrieving site certificate:");
     var cert = monkeysphere.getCertificate(browser);
     if(!cert) {
-      monkeysphere.setStatus(uri,
-			     monkeysphere.states.ERR,
+      monkeysphere.setStatus(monkeysphere.states.ERR,
 			     monkeysphere.messages.getFormattedString("statusNoCert",
 								      [uri.host]));
       return;
@@ -263,8 +254,7 @@ var monkeysphere = {
       // and force check not set
       if(!monkeysphere.preferences.getBoolPref("monkeysphere.check_good_certificates")) {
 	monkeysphere.log("main", "preferences don't require check");
-	monkeysphere.setStatus(uri,
-			       monkeysphere.states.NEU,
+	monkeysphere.setStatus(monkeysphere.states.NEU,
 			       monkeysphere.messages.getString("statusAlreadyValid"));
 	return;
       }
@@ -281,8 +271,7 @@ var monkeysphere = {
        && !has_user_permission) {
       monkeysphere.log("main", "user permission required");
       monkeysphere.notify.needsPermission(browser);
-      monkeysphere.setStatus(uri,
-			     monkeysphere.states.NEU,
+      monkeysphere.setStatus(monkeysphere.states.NEU,
 			     monkeysphere.messages.getString("statusNeedsPermission"));
       return;
     }
@@ -443,43 +432,48 @@ var monkeysphere = {
   ////////////////////////////////////////////////////////////
   getCertificate: function(browser) {
     var cert = monkeysphere.getValidCert(browser);
+    monkeysphere.log("main", "cert: " + cert);
     if (cert) {
       monkeysphere.log("main", "valid cert retrieved");
-    } else {
-      cert = monkeysphere.getInvalidCert(browser);
-      if (cert) {
-	monkeysphere.log("main", "invalid cert retrieved");
-      } else {
-	monkeysphere.log("error", "could not retrieve cert");
-	return null;
-      }
+      return cert;
     }
-    return cert;
+    cert = monkeysphere.getInvalidCert(browser);
+    if (cert) {
+	monkeysphere.log("main", "invalid cert retrieved");
+	return cert;
+    }
+    monkeysphere.log("error", "could not retrieve cert");
+    return null;
   },
 
   ////////////////////////////////////////////////////////////
   // gets current certificate, if it PASSED the browser check
   getValidCert: function(browser) {
-    var ui = browser.securityUI;
     try {
-      ui.QueryInterface(Components.interfaces.nsISSLStatusProvider);
+      var ui = browser.securityUI;
+      var SSLStatusProvider = ui.QueryInterface(Components.interfaces.nsISSLStatusProvider);
       if(!ui.SSLStatus)
+	monkeysphere.log("error", "no SSLStatus: " + SSLStatusProvider);
 	return null;
-      return ui.SSLStatus.serverCert;
+      var cert = ui.SSLStatus.serverCert;
     } catch (e) {
       monkeysphere.log("error", e);
       return null;
     }
+    return cert;
   },
 
   ////////////////////////////////////////////////////////////
   getInvalidCert: function(browser) {
     try {
-      var ssl_status = monkeysphere.getInvalidCertSSLStatus(browser.currentURI);
-      return ssl_status.QueryInterface(Components.interfaces.nsISSLStatus).serverCert;
+      var uri = browser.currentURI;
+      var ssl_status = monkeysphere.getInvalidCertSSLStatus(uri);
+      var cert = ssl_status.QueryInterface(Components.interfaces.nsISSLStatus).serverCert;
     } catch(e) {
+      monkeysphere.log("error", e);
       return null;
     }
+    return cert;
   },
 
   ////////////////////////////////////////////////////////////
