@@ -257,8 +257,6 @@ var monkeysphere = {
 								      [uri.host]));
       return;
     }
-    var sha1 = cert.sha1Fingerprint;
-    monkeysphere.log("main", " cert sha1: " + sha1);
 
     // check browser state
     monkeysphere.log("main", "checking security state:");
@@ -544,36 +542,34 @@ var monkeysphere = {
     //if (secInfo instanceof Ci.nsISSLStatusProvider) {
     //var cert = secInfo.QueryInterface(Ci.nsISSLStatusProvider).SSLStatus.QueryInterface(Ci.nsISSLStatus).serverCert;
 
-    var verificationResult = cert.verifyForUsage(Ci.nsIX509Cert.CERT_USAGE_SSLServer);
     monkeysphere.log("debug", "certificate status:");
-    monkeysphere.log("debug", "verification: ");
-    switch (verificationResult) {
+    switch (cert.verifyForUsage(Ci.nsIX509Cert.CERT_USAGE_SSLServer)) {
     case Ci.nsIX509Cert.VERIFIED_OK:
-      monkeysphere.log("debug", "\tverification: OK");
+      monkeysphere.log("debug", "\tSSL status: OK");
       break;
     case Ci.nsIX509Cert.NOT_VERIFIED_UNKNOWN:
-      monkeysphere.log("debug", "\tverification: not verfied/unknown");
+      monkeysphere.log("debug", "\tSSL status: not verfied/unknown");
       break;
     case Ci.nsIX509Cert.CERT_REVOKED:
-      monkeysphere.log("debug", "\tverification: revoked");
+      monkeysphere.log("debug", "\tSSL status: revoked");
       break;
     case Ci.nsIX509Cert.CERT_EXPIRED:
-      monkeysphere.log("debug", "\tverification: expired");
+      monkeysphere.log("debug", "\tSSL status: expired");
       break;
     case Ci.nsIX509Cert.CERT_NOT_TRUSTED:
-      monkeysphere.log("debug", "\tverification: not trusted");
+      monkeysphere.log("debug", "\tSSL status: not trusted");
       break;
     case Ci.nsIX509Cert.ISSUER_NOT_TRUSTED:
-      monkeysphere.log("debug", "\tverification: issuer not trusted");
+      monkeysphere.log("debug", "\tSSL status: issuer not trusted");
       break;
     case Ci.nsIX509Cert.ISSUER_UNKNOWN:
-      monkeysphere.log("debug", "\tverification: issuer unknown");
+      monkeysphere.log("debug", "\tSSL status: issuer unknown");
       break;
     case Ci.nsIX509Cert.INVALID_CA:
-      monkeysphere.log("debug", "\tverification: invalid CA");
+      monkeysphere.log("debug", "\tSSL status: invalid CA");
       break;
     default:
-      monkeysphere.log("debug", "\tverification: unexpected failure");
+      monkeysphere.log("debug", "\tSSL status: unexpected failure");
       break;
     }
     monkeysphere.log("debug", "\tCommon Name: " + cert.commonName);
