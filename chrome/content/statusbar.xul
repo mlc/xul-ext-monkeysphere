@@ -32,7 +32,8 @@
 		  oncommand="monkeysphere.dialog.prefs()" />
 	<menuitem label="View Certificate Store"
 		  oncommand="monkeysphere.dialog.certs()" />
-	<menuitem label="Help" oncommand="monkeysphere.dialog.help()"/>
+	<menuitem label="Help"
+		  oncommand="monkeysphere.dialog.help()" />
       </popup>
     </popupset>
  
