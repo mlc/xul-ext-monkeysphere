@@ -204,7 +204,7 @@ var monkeysphere = {
     if(uri) {
       monkeysphere.log("main", " uri: " + uri.spec);
     } else {
-      monkeysphere.log("main", " no uri data available");
+      monkeysphere.log("main", " no uri data available. ignoring.");
       monkeysphere.setStatus(monkeysphere.states.NEU,
 			     monkeysphere.messages.getString("statusNoData"));
       return;
@@ -215,37 +215,38 @@ var monkeysphere = {
     try {
       monkeysphere.log("main", " host: " + uri.host);
     } catch(err) {
-      monkeysphere.log("main", " missing host name");
+      monkeysphere.log("main", " missing host name. ignoring.");
       monkeysphere.setStatus(monkeysphere.states.NEU,
 			     monkeysphere.messages.getString("statusNoHost"));
       return;
     }
     if(!uri.host) {
-      monkeysphere.log("main", " host empty");
+      monkeysphere.log("main", " host empty.");
       return;
     }
 
     // test for https
-    monkeysphere.log("main", "checking uri scheme: " + uri.scheme);
+    monkeysphere.log("main", "checking uri scheme:");
+    monkeysphere.log("main", " scheme: " + uri.scheme);
     if(uri.scheme != "https") {
-      monkeysphere.log("main", " uri scheme not https. ignoring");
+      monkeysphere.log("main", " uri scheme not https. ignoring.");
       monkeysphere.setStatus(monkeysphere.states.NEU,
 			     monkeysphere.messages.getFormattedString("statusNonHTTPS",
 								      [uri.scheme]));
       return;
     } else {
-      monkeysphere.log("main", " scheme https. checking");
+      monkeysphere.log("main", " scheme https.");
     }
 
     // check if exception has already been granted this session
     monkeysphere.log("main", "checking override status:");
     if(monkeysphere.checkOverrideStatus(uri)) {
-      monkeysphere.log("main", " override set");
+      monkeysphere.log("main", " override set. valid!");
       monkeysphere.setStatus(monkeysphere.states.VAL,
 			     monkeysphere.messages.getString("statusInvalid"));
       return;
     } else {
-      monkeysphere.log("main", " no override");
+      monkeysphere.log("main", " no override.");
     }
 
     // get site certificate
@@ -265,7 +266,7 @@ var monkeysphere = {
 
     // if site secure, return
     if(state & Ci.nsIWebProgressListener.STATE_IS_SECURE) {
-      monkeysphere.log("main", " site cert already trusted by browser");
+      monkeysphere.log("main", " site cert already trusted by browser. ignoring.");
       // and force check not set
       if(!monkeysphere.preferences.getBoolPref("monkeysphere.check_good_certificates")) {
 	monkeysphere.log("main", "preferences don't require check");
@@ -275,10 +276,10 @@ var monkeysphere = {
       }
     // if site insecure continue
     } else if(state & Ci.nsIWebProgressListener.STATE_IS_INSECURE) {
-      monkeysphere.log("main", " state INSECURE: override required");
+      monkeysphere.log("main", " state INSECURE. query agent...");
     // else, unknown state
     } else {
-      monkeysphere.log("main", " state UNKNOWN");
+      monkeysphere.log("main", " state UNKNOWN. query agent...");
     }
 
     // check if user permission required.  if so, call notification and return
