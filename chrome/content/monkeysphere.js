@@ -490,7 +490,7 @@ var monkeysphere = {
   getValidCert: function(browser) {
     try {
       var ui = browser.securityUI;
-      var cert = ui.QueryInterface(Components.interfaces.nsISSLStatusProvider).serverCert;
+      var cert = ui.SSLStatus.serverCert;
     } catch (e) {
       //monkeysphere.log("error", e);
       return null;
