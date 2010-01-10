@@ -66,14 +66,14 @@ var monkeysphere = {
   ////////////////////////////////////////////////////////////
   // initialization function
   init: function() {
-    monkeysphere.log("main", "-- begin initialization --");
+    monkeysphere.log("main", "---- begin initialization ----");
     monkeysphere.setStatus(monkeysphere.states.NEU, "Monkeysphere");
     monkeysphere.messages = document.getElementById("message_strings");
     getBrowser().addProgressListener(monkeysphere.listener,
 				     Components.interfaces.nsIWebProgress.NOTIFY_STATE_DOCUMENT);
     // FIXME: do we need this?  what is it for?
     //setTimeout(function (){ monkeysphere.requeryAllTabs(gBrowser); }, 4000);
-    monkeysphere.log("main", "-- initialization complete --");
+    monkeysphere.log("main", "---- initialization complete ----");
   },
 
   ////////////////////////////////////////////////////////////
@@ -93,7 +93,7 @@ var monkeysphere = {
   // https://developer.mozilla.org/en/nsIWebProgressListener
   listener: {
     onLocationChange: function(aWebProgress, aRequest, aURI) {
-      monkeysphere.log("main", "++++ listener: location change: " + aURI.spec + " ++++");
+      monkeysphere.log("main", "++++ location change: " + aURI.spec + " ++++");
       try {
 	monkeysphere.updateStatus(gBrowser, false);
       } catch(err) {
@@ -109,7 +109,7 @@ var monkeysphere = {
       return;
 
       var uri = gBrowser.currentURI;
-      monkeysphere.log("main", "++++ listener: state change " + uri.spec + " ++++");
+      monkeysphere.log("main", "++++ state change " + uri.spec + " ++++");
       if(!aFlag || !Components.interfaces.nsIWebProgressListener.STATE_STOP)
 	return;
       try {
@@ -134,13 +134,13 @@ var monkeysphere = {
   ////////////////////////////////////////////////////////////
   // set the status
   setStatus: function(state, tooltip) {
-    var i = document.getElementById("monkeysphere-status-image");
-    var t = document.getElementById("monkeysphere-status");
+    var panel = document.getElementById("monkeysphere-status");
+    var icon = document.getElementById("monkeysphere-status-image");
 
     // the following happens when called from a dialog
-    if(!t || !i) {
-      i = window.opener.document.getElementById("monkeysphere-status-image");
-      t = window.opener.document.getElementById("monkeysphere-status");
+    if(!panel || !icon) {
+      panel = window.opener.document.getElementById("monkeysphere-status");
+      icon = window.opener.document.getElementById("monkeysphere-status-image");
     }
 
     // if tooltip not specified, use the current one
@@ -149,30 +149,32 @@ var monkeysphere = {
       tooltip = "Monkeysphere";
     }
 
+    panel.hidden = false;
     switch(state){
       case monkeysphere.states.ERR:
 	monkeysphere.log("main", "set status: ERR");
-	i.setAttribute("src", "chrome://monkeysphere/content/error.png");
+	icon.setAttribute("src", "chrome://monkeysphere/content/error.png");
 	break;
       case monkeysphere.states.NEU:
 	monkeysphere.log("main", "set status: NEU");
 	//i.setAttribute("src", "chrome://monkeysphere/content/default.png");
-	i.setAttribute("src", "");
+	panel.hidden = true;
+	icon.setAttribute("src", "");
 	break;
       case monkeysphere.states.PRG:
 	monkeysphere.log("main", "set status: PRG");
-	i.setAttribute("src", "chrome://monkeysphere/content/default.png");
+	icon.setAttribute("src", "chrome://monkeysphere/content/default.png");
 	break;
       case monkeysphere.states.VAL:
 	monkeysphere.log("main", "set status: VAL");
-	i.setAttribute("src", "chrome://monkeysphere/content/good.png");
+	icon.setAttribute("src", "chrome://monkeysphere/content/good.png");
 	break;
       case monkeysphere.states.INV:
 	monkeysphere.log("main", "set status: INV");
-	i.setAttribute("src", "chrome://monkeysphere/content/bad.png");
+	icon.setAttribute("src", "chrome://monkeysphere/content/bad.png");
 	break;
     }
-    t.setAttribute("tooltiptext", tooltip);
+    panel.setAttribute("tooltiptext", tooltip);
     monkeysphere.log("main", "set tooltip: '" + tooltip + "'");
   },
 
@@ -238,6 +240,8 @@ var monkeysphere = {
     monkeysphere.log("main", "checking override status:");
     if(monkeysphere.checkOverrideStatus(uri)) {
       monkeysphere.log("main", " override set");
+      monkeysphere.setStatus(monkeysphere.states.VAL,
+			     monkeysphere.messages.getString("statusInvalid"));
       return;
     } else {
       monkeysphere.log("main", " no override");
@@ -289,7 +293,7 @@ var monkeysphere = {
     }
 
     // finally go ahead and query the agent
-    monkeysphere.log("main", "querying validation agent:");
+    monkeysphere.log("main", "#### querying validation agent ####");
     monkeysphere.queryAgent(browser, cert);
   },
 
@@ -367,7 +371,7 @@ var monkeysphere = {
 	  return;
         }
         if (response.message) {
-          monkeysphere.log("query", "  agent message:" + response.message);
+          monkeysphere.log("query", "  agent message: " + response.message);
 	}
       } else {
 	monkeysphere.log("error", "validation agent did not respond");
@@ -407,7 +411,7 @@ var monkeysphere = {
   ////////////////////////////////////////////////////////////
   // browser security override function
   securityOverride: function(browser, cert) {
-    monkeysphere.log("policy", "*** CERT SECURITY OVERRIDE REQUESTED ***");
+    monkeysphere.log("policy", "**** CERT SECURITY OVERRIDE REQUESTED ****");
 
     var uri = browser.currentURI;
     var ssl_status = monkeysphere.getInvalidCertSSLStatus(uri);
