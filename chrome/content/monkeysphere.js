@@ -163,7 +163,7 @@ var monkeysphere = {
 	break;
       case monkeysphere.states.PRG:
 	monkeysphere.log("main", "set status: PRG");
-	icon.setAttribute("src", "chrome://monkeysphere/content/default.png");
+	icon.setAttribute("src", "chrome://monkeysphere/content/progress.gif");
 	break;
       case monkeysphere.states.VAL:
 	monkeysphere.log("main", "set status: VAL");
