@@ -11,11 +11,13 @@ yesQuery=Yes, query validation agent
 learnMore=Learn more
 
 # status messages
-statusURLNotValid=Monkeysphere: URL is not a valid remote server
+statusNoHost=Monkeysphere: missing URL host name
 statusNoData=Monkeysphere: browser provided an empty URI for this connection. Try hitting refresh.
 statusNonHTTPS=Monkeysphere: non-https website (scheme is '%1$S').
-statusWhitelist=Monkeysphere: %1$S is whitelisted.
+
 statusNoCert=Monkeysphere: unable to retrieve a certificate for %1$S
 statusAlreadyValid=Monkeysphere: site already trusted.
 statusNeedsPermission=Monkeysphere: permission required to query validation agent.
-statusValidated=Monkeysphere: this site has been Monkeysphere validated.
+statusInProgress=Monkeysphere: querying validation agent...
+statusValid=Monkeysphere: this site has been Monkeysphere validated.
+statusInvalid=Monkeysphere: this site has been Monkeysphere validated.

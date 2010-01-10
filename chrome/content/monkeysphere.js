@@ -3,9 +3,10 @@ var monkeysphere = {
 
   states: {
     ERR: -1, // there was a monkeysphere processing error
-    NEU:  0, // monkeysphere is neutral on this site
-    SEC:  1, // monkeysphere processed and validated
-    INS:  2 // monkeysphere processed and not validated
+    NEU:  0, // neutral on this site (no icon)
+    PRG:  1, // in progress (querying agent)
+    VAL:  2, // processed and validated
+    INV:  3  // processed and not validated
   },
 
   TRANS: false, // bool to indicate state
@@ -97,9 +98,9 @@ var monkeysphere = {
 	monkeysphere.updateStatus(gBrowser, false);
       } catch(err) {
 	monkeysphere.log("error", "listener: location change: " + err);
-      monkeysphere.setStatus(monkeysphere.states.ERR,
-			     monkeysphere.messages.getFormattedString("internalError",
-								      [err]));
+	monkeysphere.setStatus(monkeysphere.states.ERR,
+			       monkeysphere.messages.getFormattedString("internalError",
+									[err]));
       }
     },
     // FIXME: do we really need to listen to this?
@@ -115,9 +116,9 @@ var monkeysphere = {
 	monkeysphere.updateStatus(gBrowser, false);
       } catch (err) {
 	monkeysphere.log("error", "listener: state change: " + err);
-      monkeysphere.setStatus(monkeysphere.states.ERR,
-			     monkeysphere.messages.getFormattedString("internalError",
-								      [err]));
+	monkeysphere.setStatus(monkeysphere.states.ERR,
+			       monkeysphere.messages.getFormattedString("internalError",
+									[err]));
       }
     },
     onSecurityChange: function() { },
@@ -133,10 +134,6 @@ var monkeysphere = {
   ////////////////////////////////////////////////////////////
   // set the status
   setStatus: function(state, tooltip) {
-    if(!tooltip) {
-      tooltip = "Monkeysphere";
-    }
-
     var i = document.getElementById("monkeysphere-status-image");
     var t = document.getElementById("monkeysphere-status");
 
@@ -146,7 +143,6 @@ var monkeysphere = {
       t = window.opener.document.getElementById("monkeysphere-status");
     }
 
-    t.setAttribute("tooltiptext", tooltip);
     switch(state){
       case monkeysphere.states.ERR:
 	monkeysphere.log("main", "set status: ERR");
@@ -154,17 +150,24 @@ var monkeysphere = {
 	break;
       case monkeysphere.states.NEU:
 	monkeysphere.log("main", "set status: NEU");
+	//i.setAttribute("src", "chrome://monkeysphere/content/default.png");
+	i.setAttribute("src", "");
+	tooltip = t.getAttribute("tooltiptext");
+	break;
+      case monkeysphere.states.PRG:
+	monkeysphere.log("main", "set status: PRG");
 	i.setAttribute("src", "chrome://monkeysphere/content/default.png");
 	break;
-      case monkeysphere.states.SEC:
-	monkeysphere.log("main", "set status: SEC");
+      case monkeysphere.states.VAL:
+	monkeysphere.log("main", "set status: VAL");
 	i.setAttribute("src", "chrome://monkeysphere/content/good.png");
 	break;
-      case monkeysphere.states.INS:
-	monkeysphere.log("main", "set status: INS");
+      case monkeysphere.states.INV:
+	monkeysphere.log("main", "set status: INV");
 	i.setAttribute("src", "chrome://monkeysphere/content/bad.png");
 	break;
     }
+    t.setAttribute("tooltiptext", tooltip);
     monkeysphere.log("main", "set tooltip: \"" + tooltip + "\"");
   },
 
@@ -202,9 +205,9 @@ var monkeysphere = {
     try {
       monkeysphere.log("main", " host: " + uri.host);
     } catch(err) {
-      monkeysphere.log("main", " host not valid");
+      monkeysphere.log("main", " missing host name");
       monkeysphere.setStatus(monkeysphere.states.NEU,
-			     monkeysphere.messages.getString("statusURLNotValid"));
+			     monkeysphere.messages.getString("statusNoHost"));
       return;
     }
     if(!uri.host) {
@@ -227,12 +230,10 @@ var monkeysphere = {
     // check if exception has already been granted this session
     monkeysphere.log("main", "checking override status:");
     if(monkeysphere.checkOverrideStatus(uri)) {
-      monkeysphere.log("main", " site already validated");
-      monkeysphere.setStatus(monkeysphere.states.SEC,
-			     monkeysphere.messages.getString("statusValidated"));
+      monkeysphere.log("main", " override set");
       return;
     } else {
-      monkeysphere.log("main", " site not validated");
+      monkeysphere.log("main", " no override");
     }
 
     // get site certificate
@@ -293,6 +294,10 @@ var monkeysphere = {
     var agent_url = "http://localhost:8901/reviewcert";
     monkeysphere.log("query", "agent_url: " + agent_url);
 
+    // set status that query in progress
+    monkeysphere.setStatus(monkeysphere.states.PRG,
+			   monkeysphere.messages.getString("statusInProgress"));
+
     // get certificate info
     var cert_length = {};
     var dummy = {};
@@ -344,17 +349,24 @@ var monkeysphere = {
     if (client.readyState == 4) {
       if (client.status == 200) {
 	var response = JSON.parse(client.responseText);
+	monkeysphere.log("query", "validation agent response:");
         if (response.valid) {
-          monkeysphere.log("query", "computer says yes");
+          monkeysphere.log("query", "  site valid!");
 	  monkeysphere.securityOverride(browser, cert);
         } else {
-          monkeysphere.log("query", "computer says no");
+          monkeysphere.log("query", "  site invalid!");
+	  monkeysphere.setStatus(monkeysphere.states.VAL,
+				 monkeysphere.messages.getString("statusInvalid"));
+	  return;
         }
         if (response.message) {
-          monkeysphere.log("query", "computer also says:" + response.message);
+          monkeysphere.log("query", "  agent message:" + response.message);
 	}
       } else {
-	alert("Your security agent didn't work right.");
+	monkeysphere.log("error", "validation agent did not respond");
+	monkeysphere.setStatus(monkeysphere.states.ERR,
+			       monkeysphere.messages.getString("agentError"));
+	alert(monkeysphere.messages.getString("agentError"));
       }
     }
   },
@@ -425,6 +437,10 @@ var monkeysphere = {
 
     // check override status
     monkeysphere.checkOverrideStatus(uri);
+
+    // set status valid!
+    monkeysphere.setStatus(monkeysphere.states.VAL,
+			   monkeysphere.messages.getString("statusValid"));
 
     monkeysphere.log("policy", "browser reload");
     // FIXME: why the "timeout"?  what's it for?
