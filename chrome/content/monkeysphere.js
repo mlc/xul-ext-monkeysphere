@@ -11,9 +11,6 @@ var monkeysphere = {
 
   TRANS: false, // bool to indicate state
 
-  // get extension preferences
-  preferences: Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefBranchInternal),
-
   // override service class
   // http://www.oxymoronical.com/experiments/xpcomref/applications/Firefox/3.5/interfaces/nsICertOverrideService
   override: Components.classes["@mozilla.org/security/certoverride;1"].getService(Components.interfaces.nsICertOverrideService),
@@ -267,29 +264,15 @@ var monkeysphere = {
     // if site secure, return
     if(state & Ci.nsIWebProgressListener.STATE_IS_SECURE) {
       monkeysphere.log("main", " site cert already trusted by browser. ignoring.");
-      // and force check not set
-      if(!monkeysphere.preferences.getBoolPref("monkeysphere.check_good_certificates")) {
-	monkeysphere.log("main", "preferences don't require check");
-	monkeysphere.setStatus(monkeysphere.states.NEU,
-			       monkeysphere.messages.getString("statusAlreadyValid"));
-	return;
-      }
+      monkeysphere.setStatus(monkeysphere.states.NEU,
+			     monkeysphere.messages.getString("statusAlreadyValid"));
+      return;
     // if site insecure continue
     } else if(state & Ci.nsIWebProgressListener.STATE_IS_INSECURE) {
       monkeysphere.log("main", " state INSECURE. query agent...");
     // else, unknown state
     } else {
       monkeysphere.log("main", " state UNKNOWN. query agent...");
-    }
-
-    // check if user permission required.  if so, call notification and return
-    if(monkeysphere.preferences.getBoolPref("monkeysphere.require_user_permission")
-       && !has_user_permission) {
-      monkeysphere.log("main", "user permission required");
-      monkeysphere.notify.needsPermission(browser);
-      monkeysphere.setStatus(monkeysphere.states.NEU,
-			     monkeysphere.messages.getString("statusNeedsPermission"));
-      return;
     }
 
     // finally go ahead and query the agent

@@ -10,14 +10,6 @@ monkeysphere.dialog = {
       "monkeysphereResults", "centerscreen, chrome, toolbar").focus();
   },
 
-  prefs: function() {
-    window.openDialog(
-    //window.open( // for debug
-      "chrome://monkeysphere/content/dialog_prefs.xul",
-      //"monkeysphereResults", "").focus();  // for debug
-      "monkeysphereResults", "centerscreen, chrome, toolbar").focus();
-  },
-
   certs: function() {
     openDialog("chrome://pippki/content/certManager.xul", "Certificate Manager");
   },

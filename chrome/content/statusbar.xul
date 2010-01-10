@@ -25,11 +25,6 @@
 
     <popupset>
       <popup id="monkeysphere-contextmenu" position="after_start">
-	<menuitem label="View Monkeysphere Status"
-		  oncommand="monkeysphere.dialog.results()" />
-	<menuseparator />
-	<menuitem label="Preferences"
-		  oncommand="monkeysphere.dialog.prefs()" />
 	<menuitem label="View Certificate Store"
 		  oncommand="monkeysphere.dialog.certs()" />
 	<menuitem label="Help"
