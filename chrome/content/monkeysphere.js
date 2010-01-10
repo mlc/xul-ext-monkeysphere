@@ -143,6 +143,12 @@ var monkeysphere = {
       t = window.opener.document.getElementById("monkeysphere-status");
     }
 
+    // if tooltip not specified, use the current one
+    if(!tooltip) {
+      //tooltip = t.getAttribute("tooltiptext");
+      tooltip = "Monkeysphere";
+    }
+
     switch(state){
       case monkeysphere.states.ERR:
 	monkeysphere.log("main", "set status: ERR");
@@ -152,7 +158,6 @@ var monkeysphere = {
 	monkeysphere.log("main", "set status: NEU");
 	//i.setAttribute("src", "chrome://monkeysphere/content/default.png");
 	i.setAttribute("src", "");
-	tooltip = t.getAttribute("tooltiptext");
 	break;
       case monkeysphere.states.PRG:
 	monkeysphere.log("main", "set status: PRG");
@@ -168,7 +173,7 @@ var monkeysphere = {
 	break;
     }
     t.setAttribute("tooltiptext", tooltip);
-    monkeysphere.log("main", "set tooltip: \"" + tooltip + "\"");
+    monkeysphere.log("main", "set tooltip: '" + tooltip + "'");
   },
 
 ////////////////////////////////////////////////////////////
@@ -182,6 +187,8 @@ var monkeysphere = {
   // by default this is not the case
   updateStatus: function(browser, has_user_permission) {
     monkeysphere.log("main", "==== updating status ====");
+
+    const Ci = Components.interfaces;
 
     if(!browser) {
       monkeysphere.log("error", "no browser!?!");
@@ -254,7 +261,7 @@ var monkeysphere = {
     monkeysphere.log("main", " state: " + state);
 
     // if site secure, return
-    if(state & Components.interfaces.nsIWebProgressListener.STATE_IS_SECURE) {
+    if(state & Ci.nsIWebProgressListener.STATE_IS_SECURE) {
       monkeysphere.log("main", " site cert already trusted by browser");
       // and force check not set
       if(!monkeysphere.preferences.getBoolPref("monkeysphere.check_good_certificates")) {
@@ -264,7 +271,7 @@ var monkeysphere = {
 	return;
       }
     // if site insecure continue
-    } else if(state & Components.interfaces.nsIWebProgressListener.STATE_IS_INSECURE) {
+    } else if(state & Ci.nsIWebProgressListener.STATE_IS_INSECURE) {
       monkeysphere.log("main", " state INSECURE: override required");
     // else, unknown state
     } else {
@@ -390,10 +397,10 @@ var monkeysphere = {
 						       aFingerprint,
 						       aOverrideBits,
 						       aIsTemporary);
-    monkeysphere.log("debug", "  " + status);
-    monkeysphere.log("debug", "  " + JSON.stringify(aFingerprint));
-    monkeysphere.log("debug", "  " + JSON.stringify(aOverrideBits));
-    monkeysphere.log("debug", "  " + JSON.stringify(aIsTemporary));
+    monkeysphere.log("debug", "\tstatus: " + status);
+    monkeysphere.log("debug", "\tfingerprint: " + aFingerprint);
+    monkeysphere.log("debug", "\toverride bit: " + aOverrideBits);
+    monkeysphere.log("debug", "\ttemporary: " + aIsTemporary);
     return status;
   },
 
@@ -485,7 +492,7 @@ var monkeysphere = {
       var ui = browser.securityUI;
       var cert = ui.QueryInterface(Components.interfaces.nsISSLStatusProvider).serverCert;
     } catch (e) {
-      monkeysphere.log("error", e);
+      //monkeysphere.log("error", e);
       return null;
     }
     return cert;
@@ -498,7 +505,7 @@ var monkeysphere = {
       var ssl_status = monkeysphere.getInvalidCertSSLStatus(uri);
       var cert = ssl_status.QueryInterface(Components.interfaces.nsISSLStatus).serverCert;
     } catch(e) {
-      monkeysphere.log("error", e);
+      //monkeysphere.log("error", e);
       return null;
     }
     return cert;
@@ -508,8 +515,7 @@ var monkeysphere = {
   // gets current certificat, if it FAILED the security check
   getInvalidCertSSLStatus: function(uri) {
     var recentCertsService =
-      Components.classes["@mozilla.org/security/recentbadcerts;1"]
-      .getService(Components.interfaces.nsIRecentBadCertsService);
+      Components.classes["@mozilla.org/security/recentbadcerts;1"].getService(Components.interfaces.nsIRecentBadCertsService);
     if (!recentCertsService)
       return null;
 
@@ -528,50 +534,51 @@ var monkeysphere = {
   // Print SSL certificate details
   // https://developer.mozilla.org/En/How_to_check_the_security_state_of_an_XMLHTTPRequest_over_SSL
   printCertInfo: function(cert) {
+    const Ci = Components.interfaces;
+
     //if (secInfo instanceof Ci.nsISSLStatusProvider) {
-    //var cert = secInfo.QueryInterface(Ci.nsISSLStatusProvider).
-    //SSLStatus.QueryInterface(Ci.nsISSLStatus).serverCert;
+    //var cert = secInfo.QueryInterface(Ci.nsISSLStatusProvider).SSLStatus.QueryInterface(Ci.nsISSLStatus).serverCert;
 
     var verificationResult = cert.verifyForUsage(Ci.nsIX509Cert.CERT_USAGE_SSLServer);
     monkeysphere.log("debug", "certificate status:");
     monkeysphere.log("debug", "verification: ");
     switch (verificationResult) {
     case Ci.nsIX509Cert.VERIFIED_OK:
-      monkeysphere.log("debug", "OK");
+      monkeysphere.log("debug", "\tverification: OK");
       break;
     case Ci.nsIX509Cert.NOT_VERIFIED_UNKNOWN:
-      monkeysphere.log("debug", "\tnot verfied/unknown");
+      monkeysphere.log("debug", "\tverification: not verfied/unknown");
       break;
     case Ci.nsIX509Cert.CERT_REVOKED:
-      monkeysphere.log("debug", "\trevoked");
+      monkeysphere.log("debug", "\tverification: revoked");
       break;
     case Ci.nsIX509Cert.CERT_EXPIRED:
-      monkeysphere.log("debug", "\texpired");
+      monkeysphere.log("debug", "\tverification: expired");
       break;
     case Ci.nsIX509Cert.CERT_NOT_TRUSTED:
-      monkeysphere.log("debug", "\tnot trusted");
+      monkeysphere.log("debug", "\tverification: not trusted");
       break;
     case Ci.nsIX509Cert.ISSUER_NOT_TRUSTED:
-      monkeysphere.log("debug", "\tissuer not trusted");
+      monkeysphere.log("debug", "\tverification: issuer not trusted");
       break;
     case Ci.nsIX509Cert.ISSUER_UNKNOWN:
-      monkeysphere.log("debug", "\tissuer unknown");
+      monkeysphere.log("debug", "\tverification: issuer unknown");
       break;
     case Ci.nsIX509Cert.INVALID_CA:
-      monkeysphere.log("debug", "\tinvalid CA");
+      monkeysphere.log("debug", "\tverification: invalid CA");
       break;
     default:
-      monkeysphere.log("debug", "\tunexpected failure");
+      monkeysphere.log("debug", "\tverification: unexpected failure");
       break;
     }
-    monkeysphere.log("debug", "Common Name (CN) = " + cert.commonName);
-    monkeysphere.log("debug", "Organisation = " + cert.organization);
-    monkeysphere.log("debug", "Issuer = " + cert.issuerOrganization);
-    monkeysphere.log("debug", "SHA1 fingerprint = " + cert.sha1Fingerprint);
+    monkeysphere.log("debug", "\tCommon Name: " + cert.commonName);
+    monkeysphere.log("debug", "\tOrganisation: " + cert.organization);
+    monkeysphere.log("debug", "\tIssuer: " + cert.issuerOrganization);
+    monkeysphere.log("debug", "\tSHA1 fingerprint: " + cert.sha1Fingerprint);
 
     var validity = cert.validity.QueryInterface(Ci.nsIX509CertValidity);
-    monkeysphere.log("debug", "\tValid from " + validity.notBeforeGMT);
-    monkeysphere.log("debug", "\tValid until " + validity.notAfterGMT);
+    monkeysphere.log("debug", "\tValid from: " + validity.notBeforeGMT);
+    monkeysphere.log("debug", "\tValid until: " + validity.notAfterGMT);
   },
 
 ////////////////////////////////////////////////////////////

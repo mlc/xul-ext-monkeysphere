@@ -14,7 +14,6 @@ learnMore=Learn more
 statusNoHost=Monkeysphere: missing URL host name
 statusNoData=Monkeysphere: browser provided an empty URI for this connection. Try hitting refresh.
 statusNonHTTPS=Monkeysphere: non-https website (scheme is '%1$S').
-
 statusNoCert=Monkeysphere: unable to retrieve a certificate for %1$S
 statusAlreadyValid=Monkeysphere: site already trusted.
 statusNeedsPermission=Monkeysphere: permission required to query validation agent.
