@@ -240,7 +240,7 @@ var monkeysphere = {
     if(monkeysphere.checkOverrideStatus(uri)) {
       monkeysphere.log("main", " override set. valid!");
       monkeysphere.setStatus(monkeysphere.states.VAL,
-			     monkeysphere.messages.getString("statusInvalid"));
+			     monkeysphere.messages.getString("statusValid"));
       return;
     } else {
       monkeysphere.log("main", " no override.");
@@ -348,8 +348,8 @@ var monkeysphere = {
           monkeysphere.log("query", "  site valid!");
 	  monkeysphere.securityOverride(browser, cert);
         } else {
-          monkeysphere.log("query", "  site invalid!");
-	  monkeysphere.setStatus(monkeysphere.states.VAL,
+          monkeysphere.log("query", "  site invalid.");
+	  monkeysphere.setStatus(monkeysphere.states.INV,
 				 monkeysphere.messages.getString("statusInvalid"));
 	  return;
         }
