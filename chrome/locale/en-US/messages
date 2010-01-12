@@ -18,5 +18,3 @@ statusNoCert=Monkeysphere: unable to retrieve a certificate for %1$S
 statusAlreadyValid=Monkeysphere: site already trusted.
 statusNeedsPermission=Monkeysphere: permission required to query validation agent.
 statusInProgress=Monkeysphere: querying validation agent...
-statusValid=Monkeysphere: this site has been Monkeysphere validated!
-statusInvalid=Monkeysphere: this site could not be validated.

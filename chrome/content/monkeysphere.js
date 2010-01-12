@@ -142,7 +142,9 @@ var monkeysphere = {
 
     // if tooltip not specified, use the current one
     if(!tooltip) {
-      //tooltip = t.getAttribute("tooltiptext");
+      tooltip = panel.getAttribute("tooltiptext");
+    }
+    if(!tooltip) {
       tooltip = "Monkeysphere";
     }
 
@@ -238,9 +240,8 @@ var monkeysphere = {
     // check if exception has already been granted this session
     monkeysphere.log("main", "checking override status:");
     if(monkeysphere.checkOverrideStatus(uri)) {
-      monkeysphere.log("main", " override set. valid!");
-      monkeysphere.setStatus(monkeysphere.states.VAL,
-			     monkeysphere.messages.getString("statusValid"));
+      monkeysphere.log("main", " override set. verified!");
+      monkeysphere.setStatus(monkeysphere.states.VAL);
       return;
     } else {
       monkeysphere.log("main", " no override.");
@@ -344,18 +345,15 @@ var monkeysphere = {
       if (client.status == 200) {
 	var response = JSON.parse(client.responseText);
 	monkeysphere.log("query", "validation agent response:");
+	monkeysphere.log("query", "  message: " + response.message);
         if (response.valid) {
-          monkeysphere.log("query", "  site valid!");
-	  monkeysphere.securityOverride(browser, cert);
+          monkeysphere.log("query", "  site verified!");
+	  monkeysphere.securityOverride(browser, cert, response);
         } else {
-          monkeysphere.log("query", "  site invalid.");
+          monkeysphere.log("query", "  site not verified.");
 	  monkeysphere.setStatus(monkeysphere.states.INV,
-				 monkeysphere.messages.getString("statusInvalid"));
-	  return;
+				 "Monkeysphere: " + response.message);
         }
-        if (response.message) {
-          monkeysphere.log("query", "  agent message: " + response.message);
-	}
       } else {
 	monkeysphere.log("error", "validation agent did not respond");
 	monkeysphere.setStatus(monkeysphere.states.ERR,
@@ -393,7 +391,7 @@ var monkeysphere = {
 
   ////////////////////////////////////////////////////////////
   // browser security override function
-  securityOverride: function(browser, cert) {
+  securityOverride: function(browser, cert, agent_response) {
     monkeysphere.log("policy", "**** CERT SECURITY OVERRIDE REQUESTED ****");
 
     var uri = browser.currentURI;
@@ -434,7 +432,7 @@ var monkeysphere = {
 
     // set status valid!
     monkeysphere.setStatus(monkeysphere.states.VAL,
-			   monkeysphere.messages.getString("statusValid"));
+			   "Monkeysphere: " + agent_response.message);
 
     monkeysphere.log("policy", "browser reload");
     // FIXME: why the "timeout"?  what's it for?
