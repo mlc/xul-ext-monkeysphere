@@ -172,7 +172,6 @@ var monkeysphere = {
 	break;
       case monkeysphere.states.NEU:
 	monkeysphere.log("main", "set status: NEU");
-	//icon.setAttribute("src", "chrome://monkeysphere/content/default.png");
 	panel.hidden = true;
 	icon.setAttribute("src", "");
 	break;
@@ -182,8 +181,7 @@ var monkeysphere = {
 	break;
       case monkeysphere.states.VAL:
 	monkeysphere.log("main", "set status: VAL");
-	//icon.setAttribute("src", "chrome://monkeysphere/content/good.png");
-	icon.setAttribute("src", "chrome://monkeysphere/content/default.png");
+	icon.setAttribute("src", "chrome://monkeysphere/content/good.png");
 	break;
       case monkeysphere.states.INV:
 	monkeysphere.log("main", "set status: INV");
