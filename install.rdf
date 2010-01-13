@@ -26,7 +26,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     <em:name>Monkeysphere</em:name>
     <em:version>0.1</em:version>
     <em:type>2</em:type>
-    <em:optionsURL>chrome://monkeysphere/content/dialog_prefs.xul</em:optionsURL>
     <em:description>Consult Monkeysphere validation-agent
       for validation of x.509 certificates via the OpenPGP Web of Trust.
     </em:description>
