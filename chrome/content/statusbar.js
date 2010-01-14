@@ -26,6 +26,10 @@ monkeysphere.dialog = {
       "monkeysphereResults", "centerscreen, chrome, toolbar").focus();
   },
 
+  clearSiteCache: function() {
+    monkeysphere.cache.clear(gBrowser.currentURI);
+  },
+
   certs: function() {
     openDialog("chrome://pippki/content/certManager.xul", "Certificate Manager");
   },
@@ -33,8 +37,5 @@ monkeysphere.dialog = {
   help: function() {
     gBrowser.loadOneTab("chrome://monkeysphere/locale/help.html",
 			null, null, null, false);
-    // openDialog("chrome://monkeysphere/locale/help.html",
-    // 	     "",
-    // 	     "width=600,height=600,resizable=yes");
-  },
+  }
 };
