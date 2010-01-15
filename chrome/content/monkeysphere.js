@@ -408,14 +408,14 @@ var monkeysphere = {
     // "agent post data"
     var apd = {
       context: "https",
-      uid: uri.host,
+      peer: uri.host,
       pkc: {
 	type: "x509der",
 	data: cert_data
       }
     };
     monkeysphere.log("query", " context: " + apd.context);
-    monkeysphere.log("query", " uid: " + apd.uid);
+    monkeysphere.log("query", " peer: " + apd.peer);
     monkeysphere.log("query", " pkc.type: " + apd.pkc.type);
     //monkeysphere.log("query", " pkc.data: " + apd.pkc.data); // this can be big
 
