@@ -430,6 +430,7 @@ var monkeysphere = {
     client.setRequestHeader("Content-Type", "application/json");
     client.setRequestHeader("Content-Length", query.length);
     client.setRequestHeader("Connection", "close");
+    client.setRequestHeader("Accept", "application/json");
 
     // setup the state change function
     client.onreadystatechange = function() {
