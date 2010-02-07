@@ -16,11 +16,11 @@ Assume your extension development directory is:
 
 Add extension reference file to your profile extensions directory:
 
-servo:~ 0$ cat ~/.mozilla/firefox/hgl2x2er.extdev-msva/extensions/monkeysphere@monkeysphere.info 
-/home/user/msva/xul-ext/
+servo:~ 0$ cat ~/.mozilla/firefox/hgl2x2er.extdev-msva/extensions/tls-xul-ext@monkeysphere.info
+/home/user/xul-ext-monkeysphere/
 servo:~ 0$ 
 
-MUST HAVE TRAILING SLASH
+IMPORTANT: NOTE THAT YOU MUST HAVE THE TRAILING SLASH
 
 Example for iceweasel testing:
 
