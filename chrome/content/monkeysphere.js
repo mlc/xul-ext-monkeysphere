@@ -247,9 +247,6 @@ var monkeysphere = {
 
   ////////////////////////////////////////////////////////////
   // Updates the status of the current page
-  // 'has_user_permission' indicates whether the user
-  // explicitly pressed a button to launch this query,
-  // by default this is not the case
   updateStatus: function(browser) {
     monkeysphere.log("main", "==== updating status ====");
 
