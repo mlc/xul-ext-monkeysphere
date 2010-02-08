@@ -45,8 +45,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
     <popupset>
       <popup id="monkeysphere-contextmenu" position="after_start">
-	<menuitem label="Clear Site Monkeysphere Cache"
-		  oncommand="monkeysphere.contextmenufunctions.clearSiteCache()" />
 	<menuitem label="View Certificate Store"
 		  oncommand="monkeysphere.contextmenufunctions.certs()" />
 	<menuitem label="Help"

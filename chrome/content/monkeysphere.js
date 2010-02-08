@@ -1,5 +1,6 @@
 // Monkeysphere XUL extension
-// Copyright © 2010 Jameson Rollins <jrollins@finestructure.net>
+// Copyright © 2010 Jameson Rollins <jrollins@finestructure.net>,
+//                  Daniel Kahn Gillmor <dkg@fifthhorseman.net>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,54 +29,6 @@ var monkeysphere = {
   // override service class
   // http://www.oxymoronical.com/experiments/xpcomref/applications/Firefox/3.5/interfaces/nsICertOverrideService
   override: Components.classes["@mozilla.org/security/certoverride;1"].getService(Components.interfaces.nsICertOverrideService),
-
-////////////////////////////////////////////////////////////
-// CACHE OBJECT
-////////////////////////////////////////////////////////////
-// site cache object to store site caches,
-// and functions to act on cache
-
-  cache: {
-    array: {},
-
-    set: function(uri, state, message) {
-      var uid = monkeysphere.uid(uri);
-      if(!monkeysphere.cache.array[uid]) {
-	monkeysphere.cache.array[uid] = {};
-      }
-      monkeysphere.cache.array[uid].state = state;
-      monkeysphere.cache.array[uid].message = message;
-    },
-
-    get: function(uri) {
-      return monkeysphere.cache.array[monkeysphere.uid(uri)];
-    },
-
-    isCached: function(uri) {
-      if(monkeysphere.cache.get(uri)) {
-	return true;
-      } else {
-	return false;
-      }
-    },
-
-    isValid: function(uri) {
-      var cache = monkeysphere.cache.get(uri);
-      if (cache.state == monkeysphere.states.VAL) {
-	return true;
-      } else {
-	return false;
-      }
-    },
-
-    clear: function(uri) {
-      if (monkeysphere.cache.isCached(uri)) {
-	var uid = monkeysphere.uid(uri);
-	monkeysphere.log("main", "clearing cache for " + uid);
-	delete monkeysphere.cache.array[uid];
-      }
-    }
-  },
 
   uid: function(uri) {
     return uri.scheme + '://' + uri.host;
@@ -162,7 +115,7 @@ var monkeysphere = {
 	monkeysphere.updateStatus(gBrowser);
       } catch(err) {
 	monkeysphere.log("error", "listener: location change: " + err);
-	monkeysphere.setStatusERR(monkeysphere.messages.getFormattedString("internalError", [err]));
+	monkeysphere.setStatus(monkeysphere.messages.getFormattedString("internalError", [err]));
       }
     },
 
@@ -183,19 +136,10 @@ var monkeysphere = {
 // STATUS FUNCTION
 ////////////////////////////////////////////////////////////
 
-  ////////////////////////////////////////////////////////////
-  // clear the status
-  clearStatus: function(uri) {
-    var panel = document.getElementById("monkeysphere-status");
-    var icon = document.getElementById("monkeysphere-status-image");
-    if(uri) {
-      monkeysphere.cache.clear(uri);
-    }
-    monkeysphere.log("main", "clearing status.");
-    icon.setAttribute("src", "");
-    panel.hidden = true;
+  clearStatus: function() {
+    monkeysphere.setStatus(undefined, monkeysphere.states.NEU, undefined);
   },
-
+  
   ////////////////////////////////////////////////////////////
   // set the status
   setStatus: function(uri, state, message) {
@@ -208,41 +152,39 @@ var monkeysphere = {
       icon = window.opener.document.getElementById("monkeysphere-status-image");
     }
 
-    // save info in site cache
-    monkeysphere.cache.set(uri, state, message);
-
-    panel.hidden = false;
     switch(state){
       case monkeysphere.states.PRG:
 	monkeysphere.log("main", "set status: PRG");
 	icon.setAttribute("src", "chrome://monkeysphere/content/progress.gif");
+        panel.hidden = false;
 	break;
       case monkeysphere.states.VAL:
 	monkeysphere.log("main", "set status: VAL");
 	icon.setAttribute("src", "chrome://monkeysphere/content/good.png");
+        panel.hidden = false;
 	break;
       case monkeysphere.states.INV:
 	monkeysphere.log("main", "set status: INV");
 	icon.setAttribute("src", "chrome://monkeysphere/content/bad.png");
+        panel.hidden = false;
 	break;
+      case monkeysphere.states.NEU:
+        monkeysphere.log("main", "clearing status (NEU).");
+        icon.setAttribute("src", "");
+        panel.hidden = true;
+        break;
+      case monkeysphere.states.ERR:
+        monkeysphere.log("main", "set status: ERR.");
+        icon.setAttribute("src", "chrome://monkeysphere/content/error.png");
+        monkeysphere.log("main", "set message: '" + message + "'");
+        panel.setAttribute("tooltiptext", message);
+        panel.hidden = false;
+        break;
     }
-    monkeysphere.log("main", "set message: '" + message + "'");
-    panel.setAttribute("tooltiptext", message);
-  },
-
-  setStatusERR: function(message) {
-    var panel = document.getElementById("monkeysphere-status");
-    var icon = document.getElementById("monkeysphere-status-image");
-    monkeysphere.log("main", "set status: ERR");
-    icon.setAttribute("src", "chrome://monkeysphere/content/error.png");
-    monkeysphere.log("main", "set message: '" + message + "'");
-    panel.setAttribute("tooltiptext", message);
-    panel.hidden = false;
-  },
-
-  setStatusFromCache: function(uri) {
-    var cache = monkeysphere.cache.get(uri);
-    monkeysphere.setStatus(uri, cache.state, cache.message);
+    if (message) {
+      monkeysphere.log("main", "set message: '" + message + "'");
+      panel.setAttribute("tooltiptext", message);
+    }
   },
 
   ////////////////////////////////////////////////////////////
@@ -268,7 +210,7 @@ var monkeysphere = {
       monkeysphere.log("main", " uri spec: " + uri.spec);
     } else {
       monkeysphere.log("main", " no uri data available. ignoring.");
-      monkeysphere.clearStatus();
+      monkeysphere.Status();
       return;
     }
 
@@ -307,15 +249,6 @@ var monkeysphere = {
     // if site secure...
     if(state & Ci.nsIWebProgressListener.STATE_IS_SECURE) {
       monkeysphere.log("main", " site cert already trusted by browser.");
-      // if site cached...
-      if(monkeysphere.cache.isCached(uri)) {
-	monkeysphere.log("main", " site cached.");
-	// set status from cache
-	monkeysphere.setStatusFromCache(uri);
-      // else clear the status
-      } else {
-	monkeysphere.clearStatus();
-      }
       return;
     // if site insecure continue
     } else if(state & Ci.nsIWebProgressListener.STATE_IS_INSECURE) {
@@ -326,45 +259,20 @@ var monkeysphere = {
     }
 
     ////////////////////////////////////////
-    // check exception (override) and cache status
+    // check exception (override) status
     monkeysphere.log("main", "checking override status:");
 
     // if override set...
     if(monkeysphere.checkOverrideStatus(uri)) {
       monkeysphere.log("main", " override set.");
 
-      // if site cached...
-      if(monkeysphere.cache.isCached(uri)) {
-	monkeysphere.log("main", " site cached.");
-	// set status from cache
-	monkeysphere.setStatusFromCache(uri);
-      }
-
-      // overwise, since there's an override but no cache,
-      // this must be a manual user override so just return
+      // there's an override;
+      // this is probably a manual user override so just return
       return;
 
     // if no override...
     } else {
       monkeysphere.log("main", " no override.");
-
-      // if site cached...
-      if(monkeysphere.cache.isCached(uri)) {
-	monkeysphere.log("main", " site cached.");
-
-	// if site is valid...
-	if(monkeysphere.cache.isValid(uri)) {
-	  monkeysphere.log("main", " site valid? clearing stale cache.");
-	  monkeysphere.clearStatus(uri);
-
-	// else, site is invalid, but is cached,
-	// so set status from cache and return
-	} else {
-	  monkeysphere.setStatusFromCache(uri);
-	  return;
-	}
-      }
-
       // overwise proceed
     }
 
@@ -373,7 +281,7 @@ var monkeysphere = {
     monkeysphere.log("main", "retrieving site certificate:");
     var cert = monkeysphere.getCertificate(browser);
     if(!cert) {
-      monkeysphere.setStatusERR(monkeysphere.messages.getFormattedString("statusNoCert", [uri.host]));
+      monkeysphere.setStatus(uri, monkeysphere.states.ERR, monkeysphere.messages.getFormattedString("statusNoCert", [uri.host]));
       return;
     }
 
@@ -467,7 +375,7 @@ var monkeysphere = {
         }
       } else {
 	monkeysphere.log("error", "validation agent did not respond");
-	monkeysphere.setStatusERR(monkeysphere.messages.getString("agentError"));
+	monkeysphere.setStatus(undefined, monkeysphere.states.ERR, monkeysphere.messages.getString("agentError"));
 	alert(monkeysphere.messages.getString("agentError"));
       }
     }
@@ -686,9 +594,6 @@ var monkeysphere = {
   },
 
   contextmenufunctions: {
-    clearSiteCache: function() {
-      monkeysphere.cache.clear(gBrowser.currentURI);
-    },
     certs: function() {
       openDialog("chrome://pippki/content/certManager.xul", "Certificate Manager");
     },
