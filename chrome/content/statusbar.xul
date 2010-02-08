@@ -29,6 +29,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
   <script type="application/x-javascript" src="monkeysphere.js" />
 
+  <script type="text/javascript">
+    window.addEventListener('load', monkeysphere.init, false);
+  </script>
+
   <statusbar id="status-bar">
 
     <statusbarpanel id="monkeysphere-status"
