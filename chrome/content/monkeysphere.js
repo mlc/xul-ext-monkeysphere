@@ -683,5 +683,18 @@ var monkeysphere = {
   //Sets the tooltip and the text of the favicon popup on https sites
   setFaviconText: function(str) {
     document.getElementById("identity-box").tooltipText = str;
+  },
+
+  contextmenufunctions: {
+    clearSiteCache: function() {
+      monkeysphere.cache.clear(gBrowser.currentURI);
+    },
+    certs: function() {
+      openDialog("chrome://pippki/content/certManager.xul", "Certificate Manager");
+    },
+    help: function() {
+      gBrowser.loadOneTab("chrome://monkeysphere/locale/help.html",
+      null, null, null, false);
+    }
   }
 };
