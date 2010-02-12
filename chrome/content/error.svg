@@ -7,7 +7,6 @@
    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg"
-   xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    id="svg2894"
@@ -15,7 +14,7 @@
    inkscape:version="0.47 r22583"
    width="16"
    height="16"
-   sodipodi:docname="error-new.svg"
+   sodipodi:docname="error.svg"
    inkscape:export-filename="/home/jrollins/cmrg/monkeysphere/msva/git/xul-ext/chrome/content/error.png"
    inkscape:export-xdpi="90"
    inkscape:export-ydpi="90">
@@ -27,7 +26,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -68,6 +67,20 @@
        inkscape:vp_y="0 : 1000 : 0"
        inkscape:vp_x="0 : 0.5 : 1"
        sodipodi:type="inkscape:persp3d" />
+    <inkscape:perspective
+       id="perspective2829"
+       inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
+       inkscape:vp_z="1 : 0.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 0.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
+    <inkscape:perspective
+       id="perspective2860"
+       inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
+       inkscape:vp_z="1 : 0.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 0.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
   </defs>
   <sodipodi:namedview
      pagecolor="#ffffff"
@@ -78,15 +91,15 @@
      guidetolerance="10"
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:window-width="1022"
-     inkscape:window-height="734"
+     inkscape:window-width="1276"
+     inkscape:window-height="1001"
      id="namedview2896"
      showgrid="false"
      inkscape:zoom="23.864854"
      inkscape:cx="8.8683534"
      inkscape:cy="7.7182552"
      inkscape:window-x="0"
-     inkscape:window-y="0"
+     inkscape:window-y="19"
      inkscape:window-maximized="0"
      inkscape:current-layer="svg2894"
      showborder="true"
@@ -98,25 +111,32 @@
      height="16"
      x="0"
      y="-0.0068023908" />
-  <image
-     y="0"
-     x="0"
-     id="image4060"
-     height="16"
-     width="16"
-     xlink:href="file:///home/jrollins/cmrg/monkeysphere/msva/git/xul-ext/chrome/content/default-invert.png" />
   <flowRoot
      xml:space="preserve"
-     id="flowRoot3810"
+     id="flowRoot3810-1"
      style="font-size:12px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#ffdd00;fill-opacity:1;stroke:none;font-family:URW Bookman L;-inkscape-font-specification:Bitstream Vera Sans Bold"
-     transform="matrix(1.8059641,0,0,1.8859029,-2.3779727,-4.1276791)"
+     transform="matrix(2.0329367,0,0,1.5796838,-6.9682252,-2.245682)"
      inkscape:export-xdpi="300"
      inkscape:export-ydpi="300"><flowRegion
-       id="flowRegion3812"><rect
-         id="rect3814"
+       id="flowRegion3812-9"><rect
+         id="rect3814-4"
          width="8.0453033"
          height="17.515297"
          x="3.561723"
          y="-0.97056276"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#ffdd00;fill-opacity:1;font-family:URW Bookman L;-inkscape-font-specification:Bitstream Vera Sans Bold" /></flowRegion><flowPara
-       id="flowPara3816">!</flowPara></flowRoot></svg>
+       id="flowPara3816-7">!</flowPara></flowRoot>  <flowRoot
+     xml:space="preserve"
+     id="flowRoot3810-1-8"
+     style="font-size:12px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#ffdd00;fill-opacity:1;stroke:none;font-family:URW Bookman L;-inkscape-font-specification:Bitstream Vera Sans Bold"
+     transform="matrix(2.0329367,0,0,1.5796838,-0.70378329,-2.2875844)"
+     inkscape:export-xdpi="300"
+     inkscape:export-ydpi="300"><flowRegion
+       id="flowRegion3812-9-4"><rect
+         id="rect3814-4-5"
+         width="8.0453033"
+         height="17.515297"
+         x="3.561723"
+         y="-0.97056276"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#ffdd00;fill-opacity:1;font-family:URW Bookman L;-inkscape-font-specification:Bitstream Vera Sans Bold" /></flowRegion><flowPara
+       id="flowPara3816-7-0">!</flowPara></flowRoot></svg>
