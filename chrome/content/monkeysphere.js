@@ -78,7 +78,7 @@ var monkeysphere = {
   dump: function(obj) {
     for (var key in obj) {
       var value = obj[key];
-      monkeysphere.log("debug: ", key + ":" + value);
+      monkeysphere.log("debug", "dump: " + key + " : " + value);
     }
   },
 
@@ -225,7 +225,7 @@ var monkeysphere = {
     ////////////////////////////////////////
     // finally go ahead and query the agent
     monkeysphere.log("main", "#### querying validation agent ####");
-    monkeysphere.queryAgent(uri);
+    monkeysphere.queryAgent(uri, aWebProgress);
   },
 
   ////////////////////////////////////////////////////////////
@@ -285,7 +285,7 @@ var monkeysphere = {
 
   ////////////////////////////////////////////////////////////
   // query the validation agent
-  queryAgent: function(uri) {
+  queryAgent: function(uri, aWebProgress) {
 
     var agent_url = "http://localhost:8901/reviewcert";
     monkeysphere.log("query", "agent_url: " + agent_url);
@@ -337,7 +337,7 @@ var monkeysphere = {
 
     // setup the state change function
     client.onreadystatechange = function() {
-      monkeysphere.onAgentStateChange(client, cert);
+      monkeysphere.onAgentStateChange(client, cert, aWebProgress);
     };
 
     monkeysphere.log("query", "sending query:");
@@ -347,7 +347,7 @@ var monkeysphere = {
 
   ////////////////////////////////////////////////////////////
   // when the XMLHttpRequest to the agent state changes
-  onAgentStateChange: function(client, cert) {
+  onAgentStateChange: function(client, cert, aWebProgress) {
     monkeysphere.log("query", "state change: " + client.readyState);
     monkeysphere.log("query", " status: " + client.status);
     monkeysphere.log("query", " response: " + client.responseText);
@@ -358,8 +358,15 @@ var monkeysphere = {
 	monkeysphere.log("query", "validation agent response:");
 	monkeysphere.log("query", "  message: " + response.message);
         if (response.valid) {
+	  // VALID!
           monkeysphere.log("query", "  site verified!");
-	  monkeysphere.securityOverride(cert, response);
+	  monkeysphere.securityOverride(cert);
+	  monkeysphere.setStatus(monkeysphere.states.VAL,
+				 "Monkeysphere: " + response.message);
+	  monkeysphere.log("dump", "aWebProgress.DOMWindow");
+	  monkeysphere.dump(aWebProgress.DOMWindow);
+	  monkeysphere.log("query", "reload browser...");
+	  aWebProgress.DOMWindow.parent.reload(true);
         } else {
           monkeysphere.log("query", "  site not verified.");
 	  monkeysphere.setStatus(monkeysphere.states.INV,
@@ -402,7 +409,7 @@ var monkeysphere = {
 
   ////////////////////////////////////////////////////////////
   // browser security override function
-  securityOverride: function(cert, agent_response) {
+  securityOverride: function(cert) {
     monkeysphere.log("policy", "**** CERT SECURITY OVERRIDE REQUESTED ****");
 
     var uri = gBrowser.currentURI;
@@ -429,29 +436,11 @@ var monkeysphere = {
     monkeysphere.log("policy", "  cert sha1: " + cert.sha1Fingerprint);
     monkeysphere.log("policy", "  overrideBits: " + overrideBits);
 
-    // check override status
-    monkeysphere.checkOverrideStatus(uri);
-
     monkeysphere.log("policy", "setting temporary override");
     monkeysphere.override.rememberValidityOverride(uri.asciiHost, uri.port,
 						   cert,
 						   overrideBits,
 						   true);
-
-    // check override status
-    monkeysphere.checkOverrideStatus(uri);
-
-    // set status valid!
-    monkeysphere.setStatus(monkeysphere.states.VAL,
-			   "Monkeysphere: " + agent_response.message);
-
-    monkeysphere.log("policy", "browser reload");
-    // FIXME: why the "timeout"?  what's it for?
-    setTimeout(
-      function() {
-	gBrowser.loadURI(uri.spec);
-      },
-      25);
   },
 
 ////////////////////////////////////////////////////////////
