@@ -75,6 +75,13 @@ var monkeysphere = {
     }
   },
 
+  dump: function(obj) {
+    for (var key in obj) {
+      var value = obj[key];
+      monkeysphere.log("debug: ", key + ":" + value);
+    }
+  },
+
 ////////////////////////////////////////////////////////////
 // INITIALIZATION
 ////////////////////////////////////////////////////////////
