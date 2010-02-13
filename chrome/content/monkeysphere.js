@@ -83,11 +83,11 @@ var monkeysphere = {
   // initialization function
   init: function() {
     monkeysphere.log("main", "---- begin initialization ----");
-    monkeysphere.clearStatus();
+    monkeysphere.setStatus();
     monkeysphere.messages = document.getElementById("message_strings");
     monkeysphere.log("main", "creating listener.");
     getBrowser().addProgressListener(monkeysphere.listener,
-				     Components.interfaces.nsIWebProgress.NOTIFY_STATE_DOCUMENT);
+				     Components.interfaces.nsIWebProgress.NOTIFY_ALL);
     // FIXME: do we need this?  what is it for?
     //setTimeout(function (){ monkeysphere.requeryAllTabs(gBrowser); }, 4000);
     monkeysphere.log("main", "---- initialization complete ----");
@@ -109,40 +109,121 @@ var monkeysphere = {
 
   // https://developer.mozilla.org/en/nsIWebProgressListener
   listener: {
-    onLocationChange: function(aWebProgress, aRequest, aURI) {
-      monkeysphere.log("main", "++++ location change: " + aURI.spec + " ++++");
+    onLocationChange: function(aWebProgress, aRequest, aLocation) {
+      monkeysphere.log("main", "++++ location change: " + aLocation + " ++++");
+      return;
       try {
-	monkeysphere.updateStatus(gBrowser);
+	monkeysphere.updateStatus(aWebProgress, aRequest, aLocation);
       } catch(err) {
 	monkeysphere.log("error", "listener: location change: " + err);
-	monkeysphere.setStatus(monkeysphere.messages.getFormattedString("internalError", [err]));
+	monkeysphere.setStatus(monkeysphere.states.ERR,
+			       monkeysphere.messages.getFormattedString("internalError", [err]));
       }
     },
 
     onStateChange: function(aWebProgress, aRequest, aStateFlags, aStatus) {
+      monkeysphere.log("main", "++++ state change: " + aStateFlags + " ++++");
       return;
     },
 
     onSecurityChange: function(aWebProgress, aRequest, aState) {
+      monkeysphere.log("main", "++++ security change: " + aState + " ++++");
+      monkeysphere.updateStatus(aWebProgress, aRequest, aState);
       return;
     },
 
-    onStatusChange: function() { },
-    onProgressChange: function() { },
-    onLinkIconAvailable: function() { }
+    onStatusChange: function(aWebProgress, aRequest, aStatus, aMessage) {
+      monkeysphere.log("main", "++++ status change: " + aStatus + " ++++");
+      return;
+    },
+
+    onProgressChange: function() {
+      monkeysphere.log("main", "++++ progress change ++++");
+      return;
+    },
+
+    onLinkIconAvailable: function() {}
   },
 
 ////////////////////////////////////////////////////////////
 // STATUS FUNCTION
 ////////////////////////////////////////////////////////////
 
-  clearStatus: function() {
-    monkeysphere.setStatus(undefined, monkeysphere.states.NEU, undefined);
+  ////////////////////////////////////////////////////////////
+  // Updates the status of the current page
+  updateStatus: function(aWebProgress, aRequest, aState) {
+
+    monkeysphere.log("main", "==== updating status ====");
+
+    try {
+      var uri = aWebProgress.currentURI;
+    } catch(e) {
+      monkeysphere.log("main", "no uri data available.  ignoring.");
+      monkeysphere.setStatus();
+      return;
+    }
+
+    ////////////////////////////////////////
+    // check host
+    try {
+      var host = uri.host;
+    } catch(e) {
+      monkeysphere.log("main", "host empty.  ignoring.");
+      monkeysphere.setStatus();
+      return;
+    }
+
+    ////////////////////////////////////////
+    // test for https
+    if(uri.scheme != "https") {
+      monkeysphere.log("main", "uri scheme: " + uri.scheme + ".  ignoring.");
+      monkeysphere.setStatus();
+      return;
+    }
+
+    ////////////////////////////////////////
+    // check browser state
+    monkeysphere.log("main", "checking security state: " + aState);
+    // if site secure...
+    if(aState & Components.interfaces.nsIWebProgressListener.STATE_IS_SECURE) {
+      monkeysphere.log("main", "  site cert already trusted by browser.  done.");
+      monkeysphere.setStatus();
+      return;
+
+    // if site insecure continue
+    } else if(aState & Components.interfaces.nsIWebProgressListener.STATE_IS_INSECURE) {
+      monkeysphere.log("main", "  site is INSECURE");
+
+    // else if unknown state continue
+    } else {
+      monkeysphere.log("main", "  site state is unknown");
+    }
+
+    ////////////////////////////////////////
+    // check exception (override) status
+    monkeysphere.log("main", "checking override status:");
+    // if override set...
+    if(monkeysphere.checkOverrideStatus(uri)) {
+      // there's an override;
+      // this is probably a manual user override so just return
+      monkeysphere.log("main", "  override set.  done.");
+      monkeysphere.setStatus();
+      return;
+
+    // if no override continue
+    } else {
+      monkeysphere.log("main", "  no override");
+    }
+
+    ////////////////////////////////////////
+    // finally go ahead and query the agent
+    monkeysphere.log("main", "#### querying validation agent ####");
+    monkeysphere.queryAgent(uri);
   },
-  
+
   ////////////////////////////////////////////////////////////
   // set the status
-  setStatus: function(uri, state, message) {
+  setStatus: function(state, message) {
     var panel = document.getElementById("monkeysphere-status");
     var icon = document.getElementById("monkeysphere-status-image");
 
@@ -150,6 +231,10 @@ var monkeysphere = {
     if(!panel || !icon) {
       panel = window.opener.document.getElementById("monkeysphere-status");
       icon = window.opener.document.getElementById("monkeysphere-status-image");
+    }
+
+    if(!state) {
+      state = monkeysphere.states.NEU;
     }
 
     switch(state){
@@ -181,111 +266,10 @@ var monkeysphere = {
         panel.hidden = false;
         break;
     }
-    if (message) {
+    if(message) {
       monkeysphere.log("main", "set message: '" + message + "'");
       panel.setAttribute("tooltiptext", message);
     }
-  },
-
-  ////////////////////////////////////////////////////////////
-  // Updates the status of the current page
-  updateStatus: function(browser) {
-    monkeysphere.log("main", "==== updating status ====");
-
-    const Ci = Components.interfaces;
-
-    if(!browser) {
-      monkeysphere.log("error", "no browser!?!");
-      return;
-    }
-
-    ////////////////////////////////////////
-    // check uri
-    var uri = browser.currentURI;
-    monkeysphere.log("main", "checking uri:");
-    if(uri) {
-      monkeysphere.log("main", " uri spec: " + uri.spec);
-    } else {
-      monkeysphere.log("main", " no uri data available. ignoring.");
-      monkeysphere.Status();
-      return;
-    }
-
-    ////////////////////////////////////////
-    // check host
-    monkeysphere.log("main", "checking host:");
-    try {
-      monkeysphere.log("main", " host: " + uri.host);
-    } catch(err) {
-      monkeysphere.log("main", " missing host name. ignoring.");
-      monkeysphere.clearStatus();
-      return;
-    }
-    if(!uri.host) {
-      monkeysphere.log("main", " host empty. ignoring.");
-      return;
-    }
-
-    ////////////////////////////////////////
-    // test for https
-    monkeysphere.log("main", "checking uri scheme:");
-    monkeysphere.log("main", " scheme: " + uri.scheme);
-    if(uri.scheme != "https") {
-      monkeysphere.log("main", " uri scheme not https. ignoring.");
-      monkeysphere.clearStatus();
-      return;
-    } else {
-      monkeysphere.log("main", " scheme https.");
-    }
-
-    ////////////////////////////////////////
-    // check browser state
-    monkeysphere.log("main", "checking security state:");
-    var state = browser.securityUI.state;
-    monkeysphere.log("main", " state: " + state);
-    // if site secure...
-    if(state & Ci.nsIWebProgressListener.STATE_IS_SECURE) {
-      monkeysphere.log("main", " site cert already trusted by browser.");
-      return;
-    // if site insecure continue
-    } else if(state & Ci.nsIWebProgressListener.STATE_IS_INSECURE) {
-      monkeysphere.log("main", " state INSECURE.");
-    // else if unknown state continue
-    } else {
-      monkeysphere.log("main", " state UNKNOWN.");
-    }
-
-    ////////////////////////////////////////
-    // check exception (override) status
-    monkeysphere.log("main", "checking override status:");
-
-    // if override set...
-    if(monkeysphere.checkOverrideStatus(uri)) {
-      monkeysphere.log("main", " override set.");
-
-      // there's an override;
-      // this is probably a manual user override so just return
-      return;
-
-    // if no override...
-    } else {
-      monkeysphere.log("main", " no override.");
-      // overwise proceed
-    }
-
-    ////////////////////////////////////////
-    // get site certificate
-    monkeysphere.log("main", "retrieving site certificate:");
-    var cert = monkeysphere.getCertificate(browser);
-    if(!cert) {
-      monkeysphere.setStatus(uri, monkeysphere.states.ERR, monkeysphere.messages.getFormattedString("statusNoCert", [uri.host]));
-      return;
-    }
-
-    ////////////////////////////////////////
-    // finally go ahead and query the agent
-    monkeysphere.log("main", "#### querying validation agent ####");
-    monkeysphere.queryAgent(browser, cert);
   },
 
 ////////////////////////////////////////////////////////////
@@ -294,15 +278,22 @@ var monkeysphere = {
 
   ////////////////////////////////////////////////////////////
   // query the validation agent
-  queryAgent: function(browser, cert) {
-    var uri = browser.currentURI;
+  queryAgent: function(uri) {
 
     var agent_url = "http://localhost:8901/reviewcert";
     monkeysphere.log("query", "agent_url: " + agent_url);
 
+    // get site certificate
+    monkeysphere.log("query", "retrieving site certificate:");
+    var cert = monkeysphere.getCertificate();
+    if(!cert) {
+      monkeysphere.setStatus(monkeysphere.states.ERR,
+			     monkeysphere.messages.getFormattedString("statusNoCert", [uri.host]));
+      return;
+    }
+
     // set status that query in progress
-    monkeysphere.setStatus(uri,
-			   monkeysphere.states.PRG,
+    monkeysphere.setStatus(monkeysphere.states.PRG,
 			   monkeysphere.messages.getString("statusInProgress"));
 
     // get certificate info
@@ -339,7 +330,7 @@ var monkeysphere = {
 
     // setup the state change function
     client.onreadystatechange = function() {
-      monkeysphere.onAgentStateChange(client, browser, cert);
+      monkeysphere.onAgentStateChange(client, cert);
     };
 
     monkeysphere.log("query", "sending query:");
@@ -349,9 +340,7 @@ var monkeysphere = {
 
   ////////////////////////////////////////////////////////////
   // when the XMLHttpRequest to the agent state changes
-  onAgentStateChange: function(client, browser, cert) {
-    var uri = browser.currentURI;
-
+  onAgentStateChange: function(client, cert) {
     monkeysphere.log("query", "state change: " + client.readyState);
     monkeysphere.log("query", " status: " + client.status);
     monkeysphere.log("query", " response: " + client.responseText);
@@ -363,16 +352,16 @@ var monkeysphere = {
 	monkeysphere.log("query", "  message: " + response.message);
         if (response.valid) {
           monkeysphere.log("query", "  site verified!");
-	  monkeysphere.securityOverride(browser, cert, response);
+	  monkeysphere.securityOverride(cert, response);
         } else {
           monkeysphere.log("query", "  site not verified.");
-	  monkeysphere.setStatus(uri,
-				 monkeysphere.states.INV,
+	  monkeysphere.setStatus(monkeysphere.states.INV,
 				 "Monkeysphere: " + response.message);
         }
       } else {
 	monkeysphere.log("error", "validation agent did not respond");
-	monkeysphere.setStatus(undefined, monkeysphere.states.ERR, monkeysphere.messages.getString("agentError"));
+	monkeysphere.setStatus(monkeysphere.states.ERR,
+			       monkeysphere.messages.getString("agentError"));
 	alert(monkeysphere.messages.getString("agentError"));
       }
     }
@@ -406,10 +395,10 @@ var monkeysphere = {
 
   ////////////////////////////////////////////////////////////
   // browser security override function
-  securityOverride: function(browser, cert, agent_response) {
+  securityOverride: function(cert, agent_response) {
     monkeysphere.log("policy", "**** CERT SECURITY OVERRIDE REQUESTED ****");
 
-    var uri = browser.currentURI;
+    var uri = gBrowser.currentURI;
     var ssl_status = monkeysphere.getInvalidCertSSLStatus(uri);
     var overrideBits = 0;
 
@@ -446,15 +435,14 @@ var monkeysphere = {
     monkeysphere.checkOverrideStatus(uri);
 
     // set status valid!
-    monkeysphere.setStatus(uri,
-			   monkeysphere.states.VAL,
+    monkeysphere.setStatus(monkeysphere.states.VAL,
 			   "Monkeysphere: " + agent_response.message);
 
     monkeysphere.log("policy", "browser reload");
     // FIXME: why the "timeout"?  what's it for?
     setTimeout(
       function() {
-	browser.loadURI(uri.spec);
+	gBrowser.loadURI(uri.spec);
       },
       25);
   },
@@ -464,12 +452,12 @@ var monkeysphere = {
 ////////////////////////////////////////////////////////////
 
   ////////////////////////////////////////////////////////////
-  getCertificate: function(browser) {
-    var cert = monkeysphere.getValidCert(browser);
+  getCertificate: function() {
+    var cert = monkeysphere.getValidCert(gBrowser);
     if (cert) {
       monkeysphere.log("main", "valid cert retrieved");
     } else {
-      cert = monkeysphere.getInvalidCert(browser);
+      cert = monkeysphere.getInvalidCert(gBrowser);
       if (cert) {
 	monkeysphere.log("main", "invalid cert retrieved");
       } else {
@@ -535,7 +523,7 @@ var monkeysphere = {
     //if (secInfo instanceof Ci.nsISSLStatusProvider) {
     //var cert = secInfo.QueryInterface(Ci.nsISSLStatusProvider).SSLStatus.QueryInterface(Ci.nsISSLStatus).serverCert;
 
-    monkeysphere.log("debug", "certificate status:");
+    monkeysphere.log("debug", "certificate:");
     switch (cert.verifyForUsage(Ci.nsIX509Cert.CERT_USAGE_SSLServer)) {
     case Ci.nsIX509Cert.VERIFIED_OK:
       monkeysphere.log("debug", "\tSSL status: OK");
