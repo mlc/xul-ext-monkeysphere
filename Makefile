@@ -7,3 +7,9 @@
 
 xpi:
 	git archive --format=zip --output=xul-ext-monkeysphere.xpi HEAD
+
+debian-package:
+	git buildpackage -uc -us --git-upstream-branch=master --git-debian-branch=debian
+
+clean:
+	rm xul-ext-monkeysphere.xpi
