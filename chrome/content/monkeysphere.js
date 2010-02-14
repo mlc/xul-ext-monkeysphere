@@ -23,7 +23,7 @@ var monkeysphere = {
     NEUTRAL:  0, // neutral on this site (no icon)
     PROGRESS: 1, // in progress (querying agent)
     VALID:    2, // processed and validated
-    INVALID:  3  // processed and not validated
+    NOTVALID: 3  // processed and not validated
   },
 
   // override service class
@@ -79,20 +79,8 @@ var monkeysphere = {
     monkeysphere.messages = document.getElementById("message_strings");
     monkeysphere.log("creating listener.");
     getBrowser().addProgressListener(monkeysphere.listener,
-				     Components.interfaces.nsIWebProgress.NOTIFY_ALL);
-    // FIXME: do we need this?  what is it for?
-    //setTimeout(function (){ monkeysphere.requeryAllTabs(gBrowser); }, 4000);
+				     Components.interfaces.nsIWebProgress.NOTIFY_SECURITY);
     monkeysphere.log("---- initialization complete ----");
-  },
-
-  ////////////////////////////////////////////////////////////
-  // FIXME: what is this functions for?  should we be using it?
-  requeryAllTabs: function(b) {
-    var num = b.browsers.length;
-    for (var i = 0; i < num; i++) {
-      var browser = b.getBrowserAtIndex(i);
-      monkeysphere.updateStatus(browser);
-    }
   },
 
 ////////////////////////////////////////////////////////////
@@ -104,13 +92,6 @@ var monkeysphere = {
     onLocationChange: function(aWebProgress, aRequest, aLocation) {
       monkeysphere.log("++++ location change: " + aLocation + " ++++");
       return;
-      try {
-	monkeysphere.updateStatus(aWebProgress, aRequest, aLocation);
-      } catch(err) {
-	monkeysphere.log("listener: location change: " + err);
-	monkeysphere.setStatus(monkeysphere.states.ERROR,
-			       monkeysphere.messages.getFormattedString("internalError", [err]));
-      }
     },
 
     onStateChange: function(aWebProgress, aRequest, aStateFlags, aStatus) {
@@ -150,7 +131,7 @@ var monkeysphere = {
     try {
       var uri = aWebProgress.currentURI;
     } catch(e) {
-      monkeysphere.log("no uri data available.  ignoring.");
+      monkeysphere.log("no uri data available.");
       monkeysphere.setStatus();
       return;
     }
@@ -160,7 +141,7 @@ var monkeysphere = {
     try {
       var host = uri.host;
     } catch(e) {
-      monkeysphere.log("host empty.  ignoring.");
+      monkeysphere.log("host empty.");
       monkeysphere.setStatus();
       return;
     }
@@ -168,7 +149,7 @@ var monkeysphere = {
     ////////////////////////////////////////
     // test for https
     if(uri.scheme != "https") {
-      monkeysphere.log("uri scheme: " + uri.scheme + ".  ignoring.");
+      monkeysphere.log("uri scheme: " + uri.scheme + ".");
       monkeysphere.setStatus();
       return;
     }
@@ -178,7 +159,7 @@ var monkeysphere = {
     monkeysphere.log("checking security state: " + aState);
     // if site secure...
     if(aState & Components.interfaces.nsIWebProgressListener.STATE_IS_SECURE) {
-      monkeysphere.log("  site cert already trusted by browser.  done.");
+      monkeysphere.log("  site cert already trusted by browser.");
       monkeysphere.setStatus();
       return;
 
@@ -198,7 +179,7 @@ var monkeysphere = {
     if(monkeysphere.checkOverrideStatus(uri)) {
       // there's an override;
       // this is probably a manual user override so just return
-      monkeysphere.log("  override set.  done.");
+      monkeysphere.log("  override set.");
       monkeysphere.setStatus();
       return;
 
@@ -250,8 +231,8 @@ var monkeysphere = {
 	icon.setAttribute("src", "chrome://monkeysphere/content/good.png");
         panel.hidden = false;
 	break;
-      case monkeysphere.states.INVALID:
-	monkeysphere.log("set status: INVALID");
+      case monkeysphere.states.NOTVALID:
+	monkeysphere.log("set status: NOTVALID");
 	icon.setAttribute("src", "chrome://monkeysphere/content/bad.png");
         panel.hidden = false;
 	break;
@@ -384,7 +365,7 @@ var monkeysphere = {
 
         } else {
           monkeysphere.log("site not verified.");
-	  monkeysphere.setStatus(monkeysphere.states.INVALID,
+	  monkeysphere.setStatus(monkeysphere.states.NOTVALID,
 				 "Monkeysphere: " + response.message);
         }
       } else {
