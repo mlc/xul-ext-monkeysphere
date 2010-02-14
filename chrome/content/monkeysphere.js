@@ -250,7 +250,7 @@ var monkeysphere = {
         break;
     }
     if(message) {
-      monkeysphere.log("set message: '" + message + "'");
+      monkeysphere.log("set message: " + message);
       panel.setAttribute("tooltiptext", message);
     }
   },
@@ -433,6 +433,13 @@ var monkeysphere = {
 						   cert,
 						   overrideBits,
 						   true);
+  },
+
+  ////////////////////////////////////////////////////////////
+  // clear an override
+  clearOverride: function(uri) {
+    monkeysphere.log("clearly temporary override");
+    monkeysphere.override.clearValidityOverride(uri.asciiHost, uri.port);
   },
 
 ////////////////////////////////////////////////////////////
