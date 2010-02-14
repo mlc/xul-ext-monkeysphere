@@ -30,10 +30,6 @@ var monkeysphere = {
   // http://www.oxymoronical.com/experiments/xpcomref/applications/Firefox/3.5/interfaces/nsICertOverrideService
   override: Components.classes["@mozilla.org/security/certoverride;1"].getService(Components.interfaces.nsICertOverrideService),
 
-  uid: function(uri) {
-    return uri.scheme + '://' + uri.host;
-  },
-
 ////////////////////////////////////////////////////////////
 // LOG FUNCTIONS
 ////////////////////////////////////////////////////////////
@@ -62,9 +58,25 @@ var monkeysphere = {
 
   dump: function(obj) {
     for (var key in obj) {
-      var value = obj[key];
-      monkeysphere.log("dump: " + key + " : " + value);
+      monkeysphere.log("dump: " + key + " = " + obj[key]);
     }
+  },
+
+////////////////////////////////////////////////////////////
+// HELPER FUNCTIONS
+////////////////////////////////////////////////////////////
+
+  // return full uid: scheme://host[:port]
+  uid: function(uri) {
+    var port = uri.port;
+    if(port == -1)
+      port = 443;
+
+    var host = uri.host;
+    if(port != 443)
+      host = host + ":" + port;
+
+    return uri.scheme + '://' + host;
   },
 
 ////////////////////////////////////////////////////////////
@@ -191,7 +203,7 @@ var monkeysphere = {
     ////////////////////////////////////////
     // get site certificate
     monkeysphere.log("retrieving site certificate:");
-    var cert = monkeysphere.getCertificate();
+    var cert = monkeysphere.getCertificate(uri);
     if(!cert) {
       monkeysphere.setStatus(monkeysphere.states.ERROR,
 			     monkeysphere.messages.getFormattedString("statusNoCert", [host]));
@@ -359,8 +371,8 @@ var monkeysphere = {
 
 	    // BAD
             //gBrowser.loadURI(uri.spec, null, null, null, null, null);
-          } catch(ex) {
-            dump(ex);
+          } catch(e) {
+            dump(e);
           }
 
         } else {
@@ -404,19 +416,19 @@ var monkeysphere = {
   securityOverride: function(uri, cert) {
     monkeysphere.log("**** CERT SECURITY OVERRIDE ****");
 
-    var ssl_status = monkeysphere.getInvalidCertSSLStatus(uri);
+    var SSLStatus = monkeysphere.getInvalidCertSSLStatus(uri);
     var overrideBits = 0;
 
     // set override bits
-    if(ssl_status.isUntrusted) {
+    if(SSLStatus.isUntrusted) {
       monkeysphere.log("flag: ERROR_UNTRUSTED");
       overrideBits |= monkeysphere.override.ERROR_UNTRUSTED;
     }
-    if(ssl_status.isDomainMismatch) {
+    if(SSLStatus.isDomainMismatch) {
       monkeysphere.log("flag: ERROR_MISMATCH");
       overrideBits |= monkeysphere.override.ERROR_MISMATCH;
     }
-    if(ssl_status.isNotValidAtThisTime) {
+    if(SSLStatus.isNotValidAtThisTime) {
       monkeysphere.log("flag: ERROR_TIME");
       overrideBits |= monkeysphere.override.ERROR_TIME;
     }
@@ -447,51 +459,22 @@ var monkeysphere = {
 ////////////////////////////////////////////////////////////
 
   ////////////////////////////////////////////////////////////
-  getCertificate: function() {
-    var cert = monkeysphere.getValidCert(gBrowser);
-    if (cert) {
-      monkeysphere.log("valid cert retrieved");
-    } else {
-      cert = monkeysphere.getInvalidCert(gBrowser);
-      if (cert) {
-	monkeysphere.log("invalid cert retrieved");
-      } else {
-	monkeysphere.log("could not retrieve cert");
-	cert = null;
-      }
-    }
-    monkeysphere.printCertInfo(cert);
-    return cert;
-  },
-
-  ////////////////////////////////////////////////////////////
-  // gets current certificate, if it PASSED the browser check
-  getValidCert: function(browser) {
+  // FWIW, aWebProgress listener has:
+  // securityUI = [xpconnect wrapped (nsISupports, nsISecureBrowserUI, nsISSLStatusProvider)]
+  // but i don't think it can be used because it doesn't hold invalid cert info
+  getCertificate: function(uri) {
     try {
-      var ui = browser.securityUI;
-      var cert = ui.SSLStatus.serverCert;
-    } catch (e) {
-      //monkeysphere.log("error", e);
-      return null;
-    }
-    return cert;
-  },
-
-  ////////////////////////////////////////////////////////////
-  getInvalidCert: function(browser) {
-    try {
-      var uri = browser.currentURI;
-      var ssl_status = monkeysphere.getInvalidCertSSLStatus(uri);
-      var cert = ssl_status.QueryInterface(Components.interfaces.nsISSLStatus).serverCert;
+      var cert = monkeysphere.getInvalidCertSSLStatus(uri).QueryInterface(Components.interfaces.nsISSLStatus).serverCert;
+      monkeysphere.printCertInfo(cert);
+      return cert;
     } catch(e) {
-      //monkeysphere.log("error", e);
       return null;
     }
-    return cert;
   },
 
   ////////////////////////////////////////////////////////////
-  // gets current certificat, if it FAILED the security check
+  // gets current ssl status info
+  // http://www.oxymoronical.com/experiments/apidocs/interface/nsIRecentBadCertsService
   getInvalidCertSSLStatus: function(uri) {
     var recentCertsService =
       Components.classes["@mozilla.org/security/recentbadcerts;1"].getService(Components.interfaces.nsIRecentBadCertsService);
@@ -501,13 +484,13 @@ var monkeysphere = {
     var port = uri.port;
     if(port == -1)
       port = 443;
-
     var hostWithPort = uri.host + ":" + port;
-    var ssl_status = recentCertsService.getRecentBadCert(hostWithPort);
-    if (!ssl_status)
+
+    var SSLStatus = recentCertsService.getRecentBadCert(hostWithPort);
+    if (!SSLStatus)
       return null;
 
-    return ssl_status;
+    return SSLStatus;
   },
 
   // Print SSL certificate details
