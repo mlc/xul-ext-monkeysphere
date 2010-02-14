@@ -19,11 +19,11 @@
 var monkeysphere = {
 
   states: {
-    ERR: -1, // there was a monkeysphere processing error
-    NEU:  0, // neutral on this site (no icon)
-    PRG:  1, // in progress (querying agent)
-    VAL:  2, // processed and validated
-    INV:  3  // processed and not validated
+    ERROR:   -1, // there was a monkeysphere processing error
+    NEUTRAL:  0, // neutral on this site (no icon)
+    PROGRESS: 1, // in progress (querying agent)
+    VALID:    2, // processed and validated
+    INVALID:  3  // processed and not validated
   },
 
   // override service class
@@ -123,7 +123,7 @@ var monkeysphere = {
 	monkeysphere.updateStatus(aWebProgress, aRequest, aLocation);
       } catch(err) {
 	monkeysphere.log("error", "listener: location change: " + err);
-	monkeysphere.setStatus(monkeysphere.states.ERR,
+	monkeysphere.setStatus(monkeysphere.states.ERROR,
 			       monkeysphere.messages.getFormattedString("internalError", [err]));
       }
     },
@@ -223,9 +223,19 @@ var monkeysphere = {
     }
 
     ////////////////////////////////////////
+    // get site certificate
+    monkeysphere.log("main", "retrieving site certificate:");
+    var cert = monkeysphere.getCertificate();
+    if(!cert) {
+      monkeysphere.setStatus(monkeysphere.states.ERROR,
+			     monkeysphere.messages.getFormattedString("statusNoCert", [host]));
+      return;
+    }
+
+    ////////////////////////////////////////
     // finally go ahead and query the agent
     monkeysphere.log("main", "#### querying validation agent ####");
-    monkeysphere.queryAgent(uri, aWebProgress);
+    monkeysphere.queryAgent(aWebProgress, cert);
   },
 
   ////////////////////////////////////////////////////////////
@@ -241,32 +251,32 @@ var monkeysphere = {
     }
 
     if(!state) {
-      state = monkeysphere.states.NEU;
+      state = monkeysphere.states.NEUTRAL;
     }
 
     switch(state){
-      case monkeysphere.states.PRG:
-	monkeysphere.log("main", "set status: PRG");
+      case monkeysphere.states.PROGRESS:
+	monkeysphere.log("main", "set status: PROGRESS");
 	icon.setAttribute("src", "chrome://monkeysphere/content/progress.gif");
         panel.hidden = false;
 	break;
-      case monkeysphere.states.VAL:
-	monkeysphere.log("main", "set status: VAL");
+      case monkeysphere.states.VALID:
+	monkeysphere.log("main", "set status: VALID");
 	icon.setAttribute("src", "chrome://monkeysphere/content/good.png");
         panel.hidden = false;
 	break;
-      case monkeysphere.states.INV:
-	monkeysphere.log("main", "set status: INV");
+      case monkeysphere.states.INVALID:
+	monkeysphere.log("main", "set status: INVALID");
 	icon.setAttribute("src", "chrome://monkeysphere/content/bad.png");
         panel.hidden = false;
 	break;
-      case monkeysphere.states.NEU:
-        monkeysphere.log("main", "clearing status (NEU).");
+      case monkeysphere.states.NEUTRAL:
+        monkeysphere.log("main", "clearing status (NEUTRAL).");
         icon.setAttribute("src", "");
         panel.hidden = true;
         break;
-      case monkeysphere.states.ERR:
-        monkeysphere.log("main", "set status: ERR.");
+      case monkeysphere.states.ERROR:
+        monkeysphere.log("main", "set status: ERROR.");
         icon.setAttribute("src", "chrome://monkeysphere/content/error.png");
         monkeysphere.log("main", "set message: '" + message + "'");
         panel.setAttribute("tooltiptext", message);
@@ -285,22 +295,15 @@ var monkeysphere = {
 
   ////////////////////////////////////////////////////////////
   // query the validation agent
-  queryAgent: function(uri, aWebProgress) {
+  queryAgent: function(aWebProgress, cert) {
 
     var agent_url = "http://localhost:8901/reviewcert";
     monkeysphere.log("query", "agent_url: " + agent_url);
 
-    // get site certificate
-    monkeysphere.log("query", "retrieving site certificate:");
-    var cert = monkeysphere.getCertificate();
-    if(!cert) {
-      monkeysphere.setStatus(monkeysphere.states.ERR,
-			     monkeysphere.messages.getFormattedString("statusNoCert", [uri.host]));
-      return;
-    }
+    var host = aWebProgress.currentURI.host;
 
     // set status that query in progress
-    monkeysphere.setStatus(monkeysphere.states.PRG,
+    monkeysphere.setStatus(monkeysphere.states.PROGRESS,
 			   monkeysphere.messages.getString("statusInProgress"));
 
     // get certificate info
@@ -311,7 +314,7 @@ var monkeysphere = {
     // "agent post data"
     var apd = {
       context: "https",
-      peer: uri.host,
+      peer: host,
       pkc: {
 	type: "x509der",
 	data: cert_data
@@ -337,7 +340,7 @@ var monkeysphere = {
 
     // setup the state change function
     client.onreadystatechange = function() {
-      monkeysphere.onAgentStateChange(client, cert, aWebProgress);
+      monkeysphere.onAgentStateChange(client, aWebProgress, cert);
     };
 
     monkeysphere.log("query", "sending query:");
@@ -347,10 +350,12 @@ var monkeysphere = {
 
   ////////////////////////////////////////////////////////////
   // when the XMLHttpRequest to the agent state changes
-  onAgentStateChange: function(client, cert, aWebProgress) {
+  onAgentStateChange: function(client, aWebProgress, cert) {
+    var uri = aWebProgress.currentURI;
+
     monkeysphere.log("query", "state change: " + client.readyState);
-    monkeysphere.log("query", " status: " + client.status);
-    monkeysphere.log("query", " response: " + client.responseText);
+    monkeysphere.log("query", "  status: " + client.status);
+    monkeysphere.log("query", "  response: " + client.responseText);
 
     if (client.readyState == 4) {
       if (client.status == 200) {
@@ -358,23 +363,45 @@ var monkeysphere = {
 	monkeysphere.log("query", "validation agent response:");
 	monkeysphere.log("query", "  message: " + response.message);
         if (response.valid) {
+
 	  // VALID!
           monkeysphere.log("query", "  site verified!");
-	  monkeysphere.securityOverride(cert);
-	  monkeysphere.setStatus(monkeysphere.states.VAL,
+
+	  // set security override
+	  monkeysphere.securityOverride(uri, cert);
+
+	  // set state valid
+	  monkeysphere.setStatus(monkeysphere.states.VALID,
 				 "Monkeysphere: " + response.message);
-	  monkeysphere.log("dump", "aWebProgress.DOMWindow");
-	  monkeysphere.dump(aWebProgress.DOMWindow);
+
+	  // reload
 	  monkeysphere.log("query", "reload browser...");
-	  aWebProgress.DOMWindow.parent.reload(true);
+	  try {
+	    //var wn = DOM.getDocShellForWindow(aWebProgress.DOMWindow).QueryInterface(CI.nsIWebNavigation);
+	    // var CI = Components.interfaces;
+	    // var wn = window.QueryInterface(CI.nsIInterfaceRequestor)
+            //   .getInterface(CI.nsIWebNavigation)
+            //   .QueryInterface(CI.nsIDocShell);
+
+            // wn.loadURI(aWebProgress.currentURI.spec,
+            //   wn.LOAD_FLAGS_BYPASS_CACHE |
+            //   wn.LOAD_FLAGS_IS_REFRESH,
+            //   null, null, null);
+
+	    // BAD
+            //gBrowser.loadURI(uri.spec, null, null, null, null, null);
+          } catch(ex) {
+            dump(ex);
+          }
+
         } else {
           monkeysphere.log("query", "  site not verified.");
-	  monkeysphere.setStatus(monkeysphere.states.INV,
+	  monkeysphere.setStatus(monkeysphere.states.INVALID,
 				 "Monkeysphere: " + response.message);
         }
       } else {
 	monkeysphere.log("error", "validation agent did not respond");
-	monkeysphere.setStatus(monkeysphere.states.ERR,
+	monkeysphere.setStatus(monkeysphere.states.ERROR,
 			       monkeysphere.messages.getString("agentError"));
 	alert(monkeysphere.messages.getString("agentError"));
       }
@@ -409,10 +436,9 @@ var monkeysphere = {
 
   ////////////////////////////////////////////////////////////
   // browser security override function
-  securityOverride: function(cert) {
-    monkeysphere.log("policy", "**** CERT SECURITY OVERRIDE REQUESTED ****");
+  securityOverride: function(uri, cert) {
+    monkeysphere.log("policy", "**** CERT SECURITY OVERRIDE ****");
 
-    var uri = gBrowser.currentURI;
     var ssl_status = monkeysphere.getInvalidCertSSLStatus(uri);
     var overrideBits = 0;
 
