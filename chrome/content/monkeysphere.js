@@ -358,19 +358,13 @@ var monkeysphere = {
 	  // reload
 	  monkeysphere.log("reloading browser...");
 	  try {
-	    //var wn = DOM.getDocShellForWindow(aWebProgress.DOMWindow).QueryInterface(CI.nsIWebNavigation);
-	    // var CI = Components.interfaces;
-	    // var wn = window.QueryInterface(CI.nsIInterfaceRequestor)
-            //   .getInterface(CI.nsIWebNavigation)
-            //   .QueryInterface(CI.nsIDocShell);
 
-            // wn.loadURI(aWebProgress.currentURI.spec,
-            //   wn.LOAD_FLAGS_BYPASS_CACHE |
-            //   wn.LOAD_FLAGS_IS_REFRESH,
-            //   null, null, null);
+	    // FIXME: need to figure out how to get DOM element from aWebProgress
+	    var element = document.activeElement;
+	    element.webNavigation.reload(nsIWebNavigation.LOAD_FLAGS_NONE);
 
-	    // BAD
-            //gBrowser.loadURI(uri.spec, null, null, null, null, null);
+	    return;
+
           } catch(e) {
             dump(e);
           }
