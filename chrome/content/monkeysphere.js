@@ -89,7 +89,7 @@ var monkeysphere = {
     monkeysphere.log("---- begin initialization ----");
     monkeysphere.setStatus();
     monkeysphere.messages = document.getElementById("message_strings");
-    monkeysphere.log("creating listener.");
+    monkeysphere.log("creating listener");
     getBrowser().addProgressListener(monkeysphere.listener,
 				     Components.interfaces.nsIWebProgress.NOTIFY_SECURITY);
     monkeysphere.log("---- initialization complete ----");
@@ -102,28 +102,27 @@ var monkeysphere = {
   // https://developer.mozilla.org/en/nsIWebProgressListener
   listener: {
     onLocationChange: function(aWebProgress, aRequest, aLocation) {
-      monkeysphere.log("++++ location change: " + aLocation + " ++++");
-      return;
+      monkeysphere.log("++++ location change: " + aWebProgress.currentURI.host);
     },
 
     onStateChange: function(aWebProgress, aRequest, aStateFlags, aStatus) {
-      monkeysphere.log("++++ state change: " + aStateFlags + " ++++");
+      monkeysphere.log("++++    state change: " + aWebProgress.currentURI.host + " : " + aStateFlags);
       return;
     },
 
     onSecurityChange: function(aWebProgress, aRequest, aState) {
-      monkeysphere.log("++++ security change: " + aState + " ++++");
+      monkeysphere.log("++++ security change: " + aWebProgress.currentURI.host + " : " + aState);
       monkeysphere.updateStatus(aWebProgress, aRequest, aState);
       return;
     },
 
     onStatusChange: function(aWebProgress, aRequest, aStatus, aMessage) {
-      monkeysphere.log("++++ status change: " + aStatus + " ++++");
+      monkeysphere.log("++++   status change: " + aWebProgress.currentURI.host + " : " + aStatus);
       return;
     },
 
     onProgressChange: function() {
-      monkeysphere.log("++++ progress change ++++");
+      monkeysphere.log("++++ progress change: " + aWebProgress.currentURI.host);
       return;
     },
 
