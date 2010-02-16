@@ -413,6 +413,7 @@ var monkeysphere = {
     var overrideBits = 0;
 
     // set override bits
+    // FIXME: should this just be for all flags by default?
     if(SSLStatus.isUntrusted) {
       monkeysphere.log("flag: ERROR_UNTRUSTED");
       overrideBits |= monkeysphere.override.ERROR_UNTRUSTED;
@@ -426,6 +427,7 @@ var monkeysphere = {
       overrideBits |= monkeysphere.override.ERROR_TIME;
     }
 
+    monkeysphere.log("setting temporary override:");
     monkeysphere.log("\thost: " + uri.asciiHost);
     monkeysphere.log("\tport: " + uri.port);
     monkeysphere.log("\tcert: " + cert);
@@ -433,7 +435,6 @@ var monkeysphere = {
     monkeysphere.log("\tsha1: " + cert.sha1Fingerprint);
     monkeysphere.log("\toverrideBits: " + overrideBits);
 
-    monkeysphere.log("setting temporary override");
     monkeysphere.override.rememberValidityOverride(uri.asciiHost, uri.port,
 						   cert,
 						   overrideBits,
