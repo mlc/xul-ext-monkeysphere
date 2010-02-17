@@ -90,8 +90,7 @@ var monkeysphere = {
     monkeysphere.setStatus();
     monkeysphere.messages = document.getElementById("message_strings");
     monkeysphere.log("creating listener");
-    getBrowser().addProgressListener(monkeysphere.listener,
-				     Components.interfaces.nsIWebProgress.NOTIFY_SECURITY);
+    gBrowser.addTabsProgressListener(monkeysphere.tabProgressListener);
     monkeysphere.log("---- initialization complete ----");
   },
 
@@ -100,33 +99,13 @@ var monkeysphere = {
 ////////////////////////////////////////////////////////////
 
   // https://developer.mozilla.org/en/nsIWebProgressListener
-  listener: {
-    onLocationChange: function(aWebProgress, aRequest, aLocation) {
-      monkeysphere.log("++++ location change: " + aWebProgress.currentURI.host);
-    },
-
-    onStateChange: function(aWebProgress, aRequest, aStateFlags, aStatus) {
-      monkeysphere.log("++++    state change: " + aWebProgress.currentURI.host + " : " + aStateFlags);
+  // https://developer.mozilla.org/en/Listening_to_events_on_all_tabs
+  tabProgressListener: {
+    onSecurityChange: function(aBrowser, aWebProgress, aRequest, aState) {
+      monkeysphere.log("++++ security change: " + aBrowser.currentURI.host + " : " + aState);
+      monkeysphere.updateStatus(aBrowser, aState);
       return;
-    },
-
-    onSecurityChange: function(aWebProgress, aRequest, aState) {
-      monkeysphere.log("++++ security change: " + aWebProgress.currentURI.host + " : " + aState);
-      monkeysphere.updateStatus(aWebProgress, aRequest, aState);
-      return;
-    },
-
-    onStatusChange: function(aWebProgress, aRequest, aStatus, aMessage) {
-      monkeysphere.log("++++   status change: " + aWebProgress.currentURI.host + " : " + aStatus);
-      return;
-    },
-
-    onProgressChange: function() {
-      monkeysphere.log("++++ progress change: " + aWebProgress.currentURI.host);
-      return;
-    },
-
-    onLinkIconAvailable: function() {}
+    }
   },
 
 ////////////////////////////////////////////////////////////
@@ -135,12 +114,12 @@ var monkeysphere = {
 
   ////////////////////////////////////////////////////////////
   // Updates the status of the current page
-  updateStatus: function(aWebProgress, aRequest, aState) {
+  updateStatus: function(browser, state) {
 
     monkeysphere.log("==== updating status ====");
 
     try {
-      var uri = aWebProgress.currentURI;
+      var uri = browser.currentURI;
     } catch(e) {
       monkeysphere.log("no uri data available.");
       monkeysphere.setStatus();
@@ -167,15 +146,15 @@ var monkeysphere = {
 
     ////////////////////////////////////////
     // check browser state
-    monkeysphere.log("checking security state: " + aState);
+    monkeysphere.log("checking security state: " + state);
     // if site secure...
-    if(aState & Components.interfaces.nsIWebProgressListener.STATE_IS_SECURE) {
+    if(state & Components.interfaces.nsIWebProgressListener.STATE_IS_SECURE) {
       monkeysphere.log("  site cert already trusted by browser.");
       monkeysphere.setStatus();
       return;
 
     // if site insecure continue
-    } else if(aState & Components.interfaces.nsIWebProgressListener.STATE_IS_INSECURE) {
+    } else if(state & Components.interfaces.nsIWebProgressListener.STATE_IS_INSECURE) {
       monkeysphere.log("  site is INSECURE");
 
     // else if unknown state continue
@@ -212,7 +191,7 @@ var monkeysphere = {
     ////////////////////////////////////////
     // finally go ahead and query the agent
     monkeysphere.log("query agent");
-    monkeysphere.queryAgent(aWebProgress, cert);
+    monkeysphere.queryAgent(browser, cert);
   },
 
   ////////////////////////////////////////////////////////////
@@ -272,13 +251,13 @@ var monkeysphere = {
 
   ////////////////////////////////////////////////////////////
   // query the validation agent
-  queryAgent: function(aWebProgress, cert) {
+  queryAgent: function(browser, cert) {
     monkeysphere.log("#### querying validation agent ####");
 
     var agent_url = "http://localhost:8901/reviewcert";
     monkeysphere.log("agent_url: " + agent_url);
 
-    var host = aWebProgress.currentURI.host;
+    var host = browser.currentURI.host;
 
     // set status that query in progress
     monkeysphere.setStatus(monkeysphere.states.PROGRESS,
@@ -320,7 +299,7 @@ var monkeysphere = {
 
     // setup the state change function
     client.onreadystatechange = function() {
-      monkeysphere.onAgentStateChange(client, aWebProgress, cert);
+      monkeysphere.onAgentStateChange(client, browser, cert);
     };
 
     monkeysphere.log("sending query:");
@@ -330,8 +309,8 @@ var monkeysphere = {
 
   ////////////////////////////////////////////////////////////
   // when the XMLHttpRequest to the agent state changes
-  onAgentStateChange: function(client, aWebProgress, cert) {
-    var uri = aWebProgress.currentURI;
+  onAgentStateChange: function(client, browser, cert) {
+    var uri = browser.currentURI;
 
     monkeysphere.log("agent query state change: " + client.readyState);
     monkeysphere.log("  status: " + client.status);
@@ -356,17 +335,7 @@ var monkeysphere = {
 
 	  // reload
 	  monkeysphere.log("reloading browser...");
-	  try {
-
-	    // FIXME: need to figure out how to get DOM element from aWebProgress
-	    var element = document.activeElement;
-	    element.webNavigation.reload(nsIWebNavigation.LOAD_FLAGS_NONE);
-
-	    return;
-
-          } catch(e) {
-            dump(e);
-          }
+	  browser.webNavigation.reload(nsIWebNavigation.LOAD_FLAGS_NONE);
 
         } else {
           monkeysphere.log("site not verified.");
