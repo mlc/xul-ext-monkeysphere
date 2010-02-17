@@ -85,7 +85,7 @@ var monkeysphere = {
   // https://developer.mozilla.org/en/nsIWebProgressListener
   progressListener: {
     onLocationChange: function(aWebProgress, aRequest, aLocation) {
-      monkeysphere.log("++++ location change: " + aLocation.host);
+      monkeysphere.log("++++ location change: ");
       monkeysphere.updateStatus(aLocation);
     },
 
@@ -98,7 +98,7 @@ var monkeysphere = {
   // https://developer.mozilla.org/en/Listening_to_events_on_all_tabs
   tabProgressListener: {
     onSecurityChange: function(aBrowser, aWebProgress, aRequest, aState) {
-      monkeysphere.log("++++ security change: " + aBrowser.currentURI.host + " : " + aState);
+      monkeysphere.log("++++ security change: ");
       monkeysphere.checkSite(aBrowser, aState);
     },
 
@@ -112,29 +112,48 @@ var monkeysphere = {
 // MAIN SITE CHECK FUNCTION
 ////////////////////////////////////////////////////////////
 
-  checkSite: function(browser, state) {
+  //////////////////////////////////////////
+  // check uri is relevant to monkeysphere
+  isRelevantURI: function(uri) {
     ////////////////////////////////////////
-    // check uri
+    // check host
     try {
-      var uri = browser.currentURI;
+      var host = uri.host;
     } catch(e) {
-      monkeysphere.log("no uri data available.");
-      return;
+      monkeysphere.log("host data empty.");
+      return null;
     }
 
     ////////////////////////////////////////
-    // check host
-    if(!uri.host) {
-      monkeysphere.log("host empty.");
-      return;
+    // check scheme
+    try {
+      var scheme = uri.scheme;
+    } catch(e) {
+      monkeysphere.log("scheme data empty.");
+      return null;
     }
+
+    monkeysphere.log("uri: " + uri.asciiSpec);
 
     ////////////////////////////////////////
     // test for https
-    if(uri.scheme != "https") {
+    if(scheme != "https") {
       monkeysphere.log("scheme not https.");
-      return;
+      return null;
     }
+
+    // else, if uri looks ok, continue
+    return true;
+  },
+
+  //////////////////////////////////////////
+  // check site monkeysphere status
+  checkSite: function(browser, state) {
+    var uri = browser.currentURI;
+
+    // if uri not relevant, return
+    if(!monkeysphere.isRelevantURI(uri))
+      return;
 
     ////////////////////////////////////////
     // check browser state
@@ -171,12 +190,21 @@ var monkeysphere = {
   ////////////////////////////////////////////////////////////
   // update status
   updateStatus: function(uri) {
-    if(monkeysphere.cache.isSet(uri)) {
+    // return if uri not relevant
+    if(!monkeysphere.isRelevantURI(uri)) {
+      monkeysphere.setStatus();
+      return;
+    }
+
+    // clear status and return if no cache for this site
+    if(!monkeysphere.cache.isSet(uri)) {
+      monkeysphere.setStatus();
+      return;
+    }
+
+    // otherwise, set the status from the cache
     monkeysphere.setStatus(monkeysphere.cache.state(uri),
 			   monkeysphere.cache.message(uri));
-    } else {
-      monkeysphere.setStatus();
-    }
   },
 
   ////////////////////////////////////////////////////////////
@@ -212,7 +240,7 @@ var monkeysphere = {
         panel.hidden = false;
 	break;
       case monkeysphere.states.NEUTRAL:
-        monkeysphere.log("clearing status (NEUTRAL).");
+        monkeysphere.log("set status: NEUTRAL.");
         icon.setAttribute("src", "");
         panel.hidden = true;
         break;
@@ -224,8 +252,9 @@ var monkeysphere = {
         panel.hidden = false;
         break;
     }
+
     if(message) {
-      monkeysphere.log("set message: " + message);
+      monkeysphere.log("\tmessage: " + message);
       panel.setAttribute("tooltiptext", message);
     }
   },
@@ -252,6 +281,9 @@ var monkeysphere = {
     set: function(uri, state, cert, message) {
       var uid = monkeysphere.uid(uri);
       monkeysphere.log("set cache: " + uid);
+      monkeysphere.log("\tstate: " + state);
+      monkeysphere.log("\tcert: " + cert.sha1Fingerprint);
+      monkeysphere.log("\tmessage: " + message);
       if(!monkeysphere.cache.array[uid])
 	monkeysphere.cache.array[uid] = {};
       monkeysphere.cache.array[uid].state = state;
@@ -372,13 +404,14 @@ var monkeysphere = {
 
     if (client.readyState == 4) {
       if (client.status == 200) {
+
 	var response = JSON.parse(client.responseText);
-	monkeysphere.log("validation agent response:");
-	monkeysphere.log("  message: " + response.message);
+
         if (response.valid) {
 
 	  // VALID!
 	  monkeysphere.log("SITE VERIFIED!");
+	  monkeysphere.log("response message: " + response.message);
 	  monkeysphere.cache.set(uri, monkeysphere.states.VALID, cert, response.message);
 
 	  // set security override
