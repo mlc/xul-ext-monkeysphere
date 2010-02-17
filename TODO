@@ -1,5 +1,4 @@
 - bind "monkeysphere info" to temporary cert override (needed for status bar)
-- need event listener that will trigger for events in backgrounded windows/tabs
 - initialization check that agent is running
 - give "monkeysphere" info in:
   - favicon
