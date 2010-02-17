@@ -165,13 +165,14 @@ var monkeysphere = {
 
       // set status
       // FIXME: based on what?  how to cache monkeysphere status?
+      // var message = SOMETHING FROM CACHE?
       // monkeysphere.setStatus();
       // monkeysphere.setStatus(monkeysphere.states.PROGRESS,
       // 			     monkeysphere.messages.getString("statusInProgress"));
       // monkeysphere.setStatus(monkeysphere.states.VALID,
-      // 			     "Monkeysphere: " + response.message);
+      // 			     "Monkeysphere: " + message);
       // monkeysphere.setStatus(monkeysphere.states.NOTVALID,
-      // 			     "Monkeysphere: " + response.message);
+      // 			     "Monkeysphere: " + message);
       // monkeysphere.setStatus(monkeysphere.states.ERROR,
       // 			     monkeysphere.messages.getString("agentError"));
     }
