@@ -163,22 +163,6 @@ var monkeysphere = {
     }
 
     ////////////////////////////////////////
-    // check exception (override) status
-    monkeysphere.log("checking override status:");
-    // if override set...
-    if(monkeysphere.checkOverrideStatus(uri)) {
-      // there's an override;
-      // this is probably a manual user override so just return
-      monkeysphere.log("  override set.");
-      monkeysphere.setStatus();
-      return;
-
-    // if no override continue
-    } else {
-      monkeysphere.log("  no override");
-    }
-
-    ////////////////////////////////////////
     // get site certificate
     monkeysphere.log("retrieving site certificate:");
     var cert = monkeysphere.getCertificate(uri);
