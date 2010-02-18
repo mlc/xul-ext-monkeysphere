@@ -161,7 +161,7 @@ var monkeysphere = {
     // if site secure...
     if(state & Components.interfaces.nsIWebProgressListener.STATE_IS_SECURE) {
       monkeysphere.log("  site cert already trusted by browser.");
-    return;
+      return;
 
     // if site insecure continue
     } else if(state & Components.interfaces.nsIWebProgressListener.STATE_IS_INSECURE) {
@@ -176,6 +176,14 @@ var monkeysphere = {
     // get site certificate
     monkeysphere.log("retrieving site certificate:");
     var cert = monkeysphere.getCertificate(uri);
+
+    ////////////////////////////////////////
+    // check site cert
+    if(monkeysphere.cache.isSet(uri)) {
+      if(monkeysphere.cache.cert(uri) == cert.sha1Fingerprint)
+	monkeysphere.log("site cached.");
+	return;
+    }
 
     ////////////////////////////////////////
     // finally go ahead and query the agent
@@ -203,6 +211,7 @@ var monkeysphere = {
     }
 
     // otherwise, set the status from the cache
+    monkeysphere.log("setting status from cache");
     monkeysphere.setStatus(monkeysphere.cache.state(uri),
 			   monkeysphere.cache.message(uri));
   },
@@ -386,7 +395,7 @@ var monkeysphere = {
       monkeysphere.onAgentStateChange(client, browser, cert);
     };
 
-    monkeysphere.log("sending query:");
+    monkeysphere.log("sending query...");
     client.send(query);
     monkeysphere.log("query sent");
     monkeysphere.cache.set(uri, monkeysphere.states.INPROGRESS, cert, "Querying Monkeysphere validation agent...");
@@ -406,28 +415,30 @@ var monkeysphere = {
       if (client.status == 200) {
 
 	var response = JSON.parse(client.responseText);
+	monkeysphere.log("response message: " + response.message);
 
         if (response.valid) {
 
 	  // VALID!
 	  monkeysphere.log("SITE VERIFIED!");
-	  monkeysphere.log("response message: " + response.message);
 	  monkeysphere.cache.set(uri, monkeysphere.states.VALID, cert, response.message);
 
 	  // set security override
 	  monkeysphere.securityOverride(uri, cert);
 
-	  // reload page
-	  monkeysphere.log("reloading browser...");
-	  browser.webNavigation.reload(nsIWebNavigation.LOAD_FLAGS_NONE);
-
         } else {
-	  monkeysphere.log("site not verified.");
+
+	  // NOT VALID
+	  monkeysphere.log("site not verified");
 	  monkeysphere.cache.set(uri, monkeysphere.states.NOTVALID, cert, response.message);
         }
 
+	// reload page
+	monkeysphere.log("reloading browser...");
+	browser.webNavigation.reload(nsIWebNavigation.LOAD_FLAGS_NONE);
+
       } else {
-	monkeysphere.log("validation agent did not respond");
+	monkeysphere.log("validation agent did not respond.");
 	alert(monkeysphere.messages.getString("agentError"));
 	monkeysphere.cache.set(uri, monkeysphere.states.ERROR, cert, monkeysphere.messages.getString("agentError"));
       }
