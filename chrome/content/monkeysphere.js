@@ -26,6 +26,10 @@ var monkeysphere = {
     NOTVALID:   3  // processed and not validated
   },
 
+  // agent URL from environment variable
+  // "http://localhost:8901" <-- NO TRAILING SLASH
+  agent_url: [],
+
   // override service class
   // http://www.oxymoronical.com/experiments/xpcomref/applications/Firefox/3.5/interfaces/nsICertOverrideService
   override: Components.classes["@mozilla.org/security/certoverride;1"].getService(Components.interfaces.nsICertOverrideService),
@@ -70,11 +74,31 @@ var monkeysphere = {
   // initialization function
   init: function() {
     monkeysphere.log("---- begin initialization ----");
+
+    // clear status
     monkeysphere.setStatus();
+
+    // get localization messages
     monkeysphere.messages = document.getElementById("message_strings");
-    monkeysphere.log("creating listener");
+
+    // get the agent URL from the environment
+    // https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIEnvironment
+    monkeysphere.agent_url = Components.classes["@mozilla.org/process/environment;1"].getService(Components.interfaces.nsIEnvironment).get("MONKEYSPHERE_VALIDATION_AGENT_URL");
+    // return error if agent URL not set
+    if(!monkeysphere.agent_url) {
+      var message = "MONKEYSPHERE_VALIDATION_AGENT_URL environment variable not set.";
+      alert(message);
+      monkeysphere.setStatus(monkeysphere.states.ERROR, message);
+      return;
+    } else {
+      monkeysphere.log("agent url: " + monkeysphere.agent_url);
+    }
+
+    // create event listeners
+    monkeysphere.log("creating listeners");
     gBrowser.addProgressListener(monkeysphere.progressListener);
     gBrowser.addTabsProgressListener(monkeysphere.tabProgressListener);
+
     monkeysphere.log("---- initialization complete ----");
   },
 
@@ -179,10 +203,13 @@ var monkeysphere = {
 
     ////////////////////////////////////////
     // check site cert
+    // FIXME: what's the right checks to do here?
+    // FIXME: how do we make it so that one can reload the page if an agent error has been fixed
     if(monkeysphere.cache.isSet(uri)) {
-      if(monkeysphere.cache.cert(uri) == cert.sha1Fingerprint)
+      if(monkeysphere.cache.cert(uri) == cert.sha1Fingerprint) {
 	monkeysphere.log("site cached.");
 	return;
+      }
     }
 
     ////////////////////////////////////////
@@ -249,15 +276,13 @@ var monkeysphere = {
         panel.hidden = false;
 	break;
       case monkeysphere.states.NEUTRAL:
-        monkeysphere.log("set status: NEUTRAL.");
+        monkeysphere.log("set status: NEUTRAL");
         icon.setAttribute("src", "");
         panel.hidden = true;
         break;
       case monkeysphere.states.ERROR:
-        monkeysphere.log("set status: ERROR.");
+        monkeysphere.log("set status: ERROR");
         icon.setAttribute("src", "chrome://monkeysphere/content/error.png");
-        monkeysphere.log("set message: '" + message + "'");
-        panel.setAttribute("tooltiptext", message);
         panel.hidden = false;
         break;
     }
@@ -350,8 +375,7 @@ var monkeysphere = {
   queryAgent: function(browser, cert) {
     monkeysphere.log("#### querying validation agent ####");
 
-    var agent_url = "http://localhost:8901/reviewcert";
-    monkeysphere.log("agent_url: " + agent_url);
+    monkeysphere.log("agent_url: " + monkeysphere.agent_url);
 
     var uri = browser.currentURI;
     var host = uri.host;
@@ -380,9 +404,10 @@ var monkeysphere = {
     // make JSON query string
     var query = JSON.stringify(apd);
 
-    monkeysphere.log("creating http request to " + agent_url);
+    var request_url = monkeysphere.agent_url + "/reviewcert";
+    monkeysphere.log("creating http request to " + request_url);
     var client = new XMLHttpRequest();
-    client.open("POST", agent_url, true);
+    client.open("POST", request_url, true);
 
     // set headers
     client.setRequestHeader("Content-Type", "application/json");
@@ -433,15 +458,15 @@ var monkeysphere = {
 	  monkeysphere.cache.set(uri, monkeysphere.states.NOTVALID, cert, response.message);
         }
 
-	// reload page
-	monkeysphere.log("reloading browser...");
-	browser.webNavigation.reload(nsIWebNavigation.LOAD_FLAGS_NONE);
-
       } else {
 	monkeysphere.log("validation agent did not respond.");
-	alert(monkeysphere.messages.getString("agentError"));
+	//alert(monkeysphere.messages.getString("agentError"));
 	monkeysphere.cache.set(uri, monkeysphere.states.ERROR, cert, monkeysphere.messages.getString("agentError"));
       }
+
+      // reload page
+      monkeysphere.log("reloading browser...");
+      browser.webNavigation.reload(nsIWebNavigation.LOAD_FLAGS_NONE);
     }
   },
 
