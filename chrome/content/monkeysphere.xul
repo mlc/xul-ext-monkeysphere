@@ -49,10 +49,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
     <popupset>
       <popup id="monkeysphere-contextmenu" position="after_start">
-	<menuitem label="Clear site override"
-		  oncommand="monkeysphere.contextmenufunctions.clearSite()" />
+	<menuitem label="Clear Site Monkeysphere Status"
+		  oncommand="monkeysphere.contextMenuFunctions.clearSite()" />
 	<menuitem label="Help"
-		  oncommand="monkeysphere.contextmenufunctions.help()" />
+		  oncommand="monkeysphere.contextMenuFunctions.help()" />
       </popup>
     </popupset>
  
