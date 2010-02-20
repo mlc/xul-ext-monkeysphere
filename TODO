@@ -3,6 +3,4 @@
 - give "monkeysphere" info in:
   - favicon
   - cert validity in certificate view dialog for site
-- status menu item clear temporary cert override for site
-- status menu item to view site cert
 - fix documentation

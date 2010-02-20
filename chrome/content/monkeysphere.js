@@ -360,6 +360,7 @@ var monkeysphere = {
 
     clear: function(uri) {
       var uid = monkeysphere.uid(uri);
+      monkeysphere.log("clear cache for " + uid);
       if(monkeysphere.cache.array[uid])
 	monkeysphere.cache.array[uid] = {};
       return;
@@ -639,6 +640,11 @@ var monkeysphere = {
   },
 
   contextmenufunctions: {
+    clearSite: function() {
+      var uri = gBrowser.currentURI;
+      monkeysphere.clearOverride(uri);
+      monkeysphere.cache.clear(uri);
+    },
     certs: function() {
       openDialog("chrome://pippki/content/certManager.xul", "Certificate Manager");
     },
