@@ -213,17 +213,6 @@ var monkeysphere = {
     var cert = monkeysphere.getCertificate(uri);
 
     ////////////////////////////////////////
-    // check site cert
-    // FIXME: what's the right checks to do here?
-    // FIXME: how do we make it so that a reload can recheck?
-    if(monkeysphere.cache.isSet(uri)) {
-      if(monkeysphere.cache.cert(uri) == cert.sha1Fingerprint) {
-	monkeysphere.log("site cached.");
-	return;
-      }
-    }
-
-    ////////////////////////////////////////
     // finally go ahead and query the agent
     monkeysphere.log("querying agent...");
     monkeysphere.queryAgent(browser, cert);
@@ -236,22 +225,7 @@ var monkeysphere = {
   //////////////////////////////////////////////////////////
   // update status
   updateStatus: function(uri) {
-    // return if uri not relevant
-    if(!monkeysphere.isRelevantURI(uri)) {
-      monkeysphere.setStatus();
-      return;
-    }
-
-    // clear status and return if no cache for this site
-    if(!monkeysphere.cache.isSet(uri)) {
-      monkeysphere.setStatus();
-      return;
-    }
-
-    // otherwise, set the status from the cache
-    monkeysphere.log("setting status from cache");
-    monkeysphere.setStatus(monkeysphere.cache.state(uri),
-			   monkeysphere.cache.message(uri));
+    monkeysphere.setStatus();
   },
 
   //////////////////////////////////////////////////////////
@@ -301,80 +275,6 @@ var monkeysphere = {
     if(message) {
       monkeysphere.log("set message: " + message);
       panel.setAttribute("tooltiptext", message);
-    }
-  },
-
-////////////////////////////////////////////////////////////
-// CACHE
-////////////////////////////////////////////////////////////
-
-  // return full uid: scheme://host[:port]
-  uid: function(uri) {
-    var host = uri.host;
-    var port = uri.port;
-    if(port == -1)
-      port = 443;
-    if(port != 443)
-      host = host + ":" + port;
-    return uri.scheme + '://' + host;
-  },
-
-  // cache
-  cache: {
-    array: {},
-
-    set: function(uri, state, cert, message) {
-      var uid = monkeysphere.uid(uri);
-      monkeysphere.log("set cache: " + uid);
-      monkeysphere.log("\tstate: " + state);
-      monkeysphere.log("\tcert: " + cert.sha1Fingerprint);
-      monkeysphere.log("\tmessage: " + message);
-      if(!monkeysphere.cache.array[uid])
-	monkeysphere.cache.array[uid] = {};
-      monkeysphere.cache.array[uid].state = state;
-      monkeysphere.cache.array[uid].cert = cert.sha1Fingerprint;
-      monkeysphere.cache.array[uid].message = message;
-      return;
-    },
-
-    isSet: function(uri, state, cert, message) {
-      var uid = monkeysphere.uid(uri);
-      if(monkeysphere.cache.array[uid])
-	return true;
-      else
-	return false;
-    },
-
-    state: function(uri) {
-      var uid = monkeysphere.uid(uri);
-      if(monkeysphere.cache.array[uid])
-	return monkeysphere.cache.array[uid].state;
-      else
-	return null;
-    },
-
-    cert: function(uri) {
-      var uid = monkeysphere.uid(uri);
-      if(monkeysphere.cache.array[uid])
-	return monkeysphere.cache.array[uid].cert;
-      else
-	return null;
-    },
-
-    message: function(uri) {
-      var uid = monkeysphere.uid(uri);
-      if(monkeysphere.cache.array[uid])
-	return monkeysphere.cache.array[uid].message;
-      else
-	return null;
-    },
-
-    clear: function(uri) {
-      var uid = monkeysphere.uid(uri);
-      monkeysphere.log("clear cache: " + uid);
-      if(monkeysphere.cache.array[uid])
-	monkeysphere.cache.array[uid] = {};
-      return;
     }
   },
 
@@ -435,7 +335,6 @@ var monkeysphere = {
     monkeysphere.log("sending query...");
     client.send(query);
     monkeysphere.log("query sent");
-    monkeysphere.cache.set(uri, monkeysphere.states.INPROGRESS, cert, "Querying Monkeysphere validation agent...");
     browser.webNavigation.reload(nsIWebNavigation.LOAD_FLAGS_NONE);
   },
 
@@ -457,20 +356,17 @@ var monkeysphere = {
 
 	  // VALID!
 	  monkeysphere.log("SITE VERIFIED!");
-	  monkeysphere.cache.set(uri, monkeysphere.states.VALID, cert, response.message);
 	  monkeysphere.securityOverride(uri, cert);
 
         } else {
 
 	  // NOT VALID
 	  monkeysphere.log("site not verified.");
-	  monkeysphere.cache.set(uri, monkeysphere.states.NOTVALID, cert, response.message);
         }
 
       } else {
 	monkeysphere.log("validation agent did not respond.");
 	//alert(monkeysphere.messages.getString("agentError"));
-	monkeysphere.cache.set(uri, monkeysphere.states.ERROR, cert, monkeysphere.messages.getString("agentError"));
       }
 
       // reload page
@@ -648,7 +544,6 @@ var monkeysphere = {
     clearSite: function() {
       var uri = gBrowser.currentURI;
       monkeysphere.clearOverride(uri);
-      monkeysphere.cache.clear(uri);
     },
     certs: function() {
       openDialog("chrome://pippki/content/certManager.xul", "Certificate Manager");
