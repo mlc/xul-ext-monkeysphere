@@ -28,7 +28,11 @@ var monkeysphere = {
 
   // agent URL from environment variable
   // "http://localhost:8901" <-- NO TRAILING SLASH
-  agent_url: [],
+  agent_socket: [],
+  
+  // default socket
+  // FIXME: should be configurable via prefs.js
+  default_socket: "http://localhost:8901",
 
   // override service class
   // http://www.oxymoronical.com/experiments/xpcomref/applications/Firefox/3.5/interfaces/nsICertOverrideService
@@ -83,16 +87,16 @@ var monkeysphere = {
 
     // get the agent URL from the environment
     // https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIEnvironment
-    monkeysphere.agent_url = Components.classes["@mozilla.org/process/environment;1"].getService(Components.interfaces.nsIEnvironment).get("MONKEYSPHERE_VALIDATION_AGENT_URL");
+    monkeysphere.agent_socket = Components.classes["@mozilla.org/process/environment;1"].getService(Components.interfaces.nsIEnvironment).get("MONKEYSPHERE_VALIDATION_AGENT_SOCKET");
     // return error if agent URL not set
-    if(!monkeysphere.agent_url) {
-      var message = "MONKEYSPHERE_VALIDATION_AGENT_URL environment variable not set.";
+    if(!monkeysphere.agent_socket) {
+      var message = "MONKEYSPHERE_VALIDATION_AGENT_SOCKET environment variable not set.  Using default of " + monkeysphere.default_socket;
       alert(message);
-      monkeysphere.setStatus(monkeysphere.states.ERROR, message);
-      return;
-    } else {
-      monkeysphere.log("agent url: " + monkeysphere.agent_url);
+      monkeysphere.agent_socket = monkeysphere.default_socket;
     }
+    // replace trailing slashes
+    monkeysphere.agent_socket = monkeysphere.agent_socket.replace(/\/*$/, '');
+    monkeysphere.log("agent socket: " + monkeysphere.agent_socket);
 
     // create event listeners
     monkeysphere.log("creating listeners...");
@@ -383,7 +387,7 @@ var monkeysphere = {
   queryAgent: function(browser, cert) {
     monkeysphere.log("#### querying validation agent ####");
 
-    monkeysphere.log("agent_url: " + monkeysphere.agent_url);
+    monkeysphere.log("agent_socket: " + monkeysphere.agent_socket);
 
     var uri = browser.currentURI;
     var host = uri.host;
@@ -412,7 +416,7 @@ var monkeysphere = {
     // make JSON query string
     var query = JSON.stringify(apd);
 
-    var request_url = monkeysphere.agent_url + "/reviewcert";
+    var request_url = monkeysphere.agent_socket + "/reviewcert";
     monkeysphere.log("creating http request to " + request_url);
     var client = new XMLHttpRequest();
     client.open("POST", request_url, true);
