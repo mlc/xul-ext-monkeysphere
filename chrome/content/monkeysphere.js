@@ -335,7 +335,7 @@ var monkeysphere = {
     monkeysphere.log("sending query...");
     client.send(query);
     monkeysphere.log("query sent");
-    browser.webNavigation.reload(nsIWebNavigation.LOAD_FLAGS_NONE);
+    monkeysphere.setStatus(monkeysphere.states.INPROGRESS);
   },
 
   //////////////////////////////////////////////////////////
