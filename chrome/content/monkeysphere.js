@@ -113,7 +113,7 @@ var monkeysphere = {
   // https://developer.mozilla.org/en/nsIWebProgressListener
   progressListener: {
     onLocationChange: function(aWebProgress, aRequest, aLocation) {
-      monkeysphere.log("++++ location change: " + aLocation);
+      monkeysphere.log("++++ location change: " + aLocation.prePath);
     },
 
     onProgressChange: function() {},
@@ -125,14 +125,22 @@ var monkeysphere = {
   // https://developer.mozilla.org/en/Listening_to_events_on_all_tabs
   tabProgressListener: {
     onSecurityChange: function(aBrowser, aWebProgress, aRequest, aState) {
-      monkeysphere.log("++++ security change: ");
+      monkeysphere.log("++++ tabPL security change: ");
       monkeysphere.checkSite(aBrowser, aState);
     },
 
-    onLocationChange: function() {},
-    onProgressChange: function() {},
-    onStateChange: function() {},
-    onStatusChange: function() {}
+    onLocationChange: function(aBrowser, aWebProgress, aRequest, aLocation) {
+      monkeysphere.log("++++ tabPL location change: " + aLocation.prePath);
+    },
+    onProgressChange: function() {
+      monkeysphere.log("++++ tabPL progress change: " + aLocation.prePath);
+    },
+    onStateChange: function() {
+      monkeysphere.log("++++ tabPL status change: " + aLocation.prePath);
+    },
+    onStatusChange: function() {
+      monkeysphere.log("++++ tabPL status change: " + aLocation.prePath);
+    }
   },
 
 ////////////////////////////////////////////////////////////
