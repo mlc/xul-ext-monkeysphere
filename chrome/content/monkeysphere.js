@@ -113,8 +113,7 @@ var monkeysphere = {
   // https://developer.mozilla.org/en/nsIWebProgressListener
   progressListener: {
     onLocationChange: function(aWebProgress, aRequest, aLocation) {
-      monkeysphere.log("++++ location change: ");
-      monkeysphere.updateStatus(aLocation);
+      monkeysphere.log("++++ location change: " + aLocation);
     },
 
     onProgressChange: function() {},
@@ -221,12 +220,6 @@ var monkeysphere = {
 ////////////////////////////////////////////////////////////
 // STATUS FUNCTIONS
 ////////////////////////////////////////////////////////////
-
-  //////////////////////////////////////////////////////////
-  // update status
-  updateStatus: function(uri) {
-    monkeysphere.setStatus();
-  },
 
   //////////////////////////////////////////////////////////
   // set the status
