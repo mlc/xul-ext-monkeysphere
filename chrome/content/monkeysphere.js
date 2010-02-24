@@ -184,6 +184,7 @@ var monkeysphere = {
 
     // if uri not relevant, return
     if(!monkeysphere.isRelevantURI(uri)) {
+      monkeysphere.setStatus(monkeysphere.states.NEUTRAL);
       monkeysphere.log("done.");
       return;
     }
