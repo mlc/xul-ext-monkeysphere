@@ -236,6 +236,7 @@ var monkeysphere = {
 
     // the following happens when called from a dialog
     if(!panel || !icon) {
+      monkeysphere.log("setStatus: falling back to window.opener");
       panel = window.opener.document.getElementById("monkeysphere-status");
       icon = window.opener.document.getElementById("monkeysphere-status-image");
     }
