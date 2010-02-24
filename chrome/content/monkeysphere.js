@@ -358,21 +358,22 @@ var monkeysphere = {
 	  // VALID!
 	  monkeysphere.log("SITE VERIFIED!");
 	  monkeysphere.securityOverride(uri, cert);
-
+          // reload page
+          monkeysphere.log("reloading browser...");
+          browser.webNavigation.reload(nsIWebNavigation.LOAD_FLAGS_NONE);
+          monkeysphere.setStatus(monkeysphere.states.VALID);
         } else {
 
 	  // NOT VALID
 	  monkeysphere.log("site not verified.");
+          monkeysphere.setStatus(monkeysphere.states.NOTVALID);
         }
 
       } else {
 	monkeysphere.log("validation agent did not respond.");
 	//alert(monkeysphere.messages.getString("agentError"));
+        monkeysphere.setStatus(monkeysphere.states.ERROR);
       }
-
-      // reload page
-      monkeysphere.log("reloading browser...");
-      browser.webNavigation.reload(nsIWebNavigation.LOAD_FLAGS_NONE);
     }
   },
 
