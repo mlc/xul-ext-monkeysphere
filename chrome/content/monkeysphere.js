@@ -114,6 +114,7 @@ var monkeysphere = {
   progressListener: {
     onLocationChange: function(aWebProgress, aRequest, aLocation) {
       monkeysphere.log("++++ location change: " + aLocation.prePath);
+      monkeysphere.logBrowserInfo(gBrowser);
     },
 
     onProgressChange: function() {},
@@ -127,22 +128,35 @@ var monkeysphere = {
     onSecurityChange: function(aBrowser, aWebProgress, aRequest, aState) {
       monkeysphere.log("++++ tabPL security change: ");
       monkeysphere.checkSite(aBrowser, aState);
+      monkeysphere.logBrowserInfo(aBrowser);
     },
 
     onLocationChange: function(aBrowser, aWebProgress, aRequest, aLocation) {
       monkeysphere.log("++++ tabPL location change: " + aLocation.prePath);
+      monkeysphere.logBrowserInfo(aBrowser);
     },
-    onProgressChange: function() {
-      monkeysphere.log("++++ tabPL progress change: " + aLocation.prePath);
+    onProgressChange: function(aBrowser, awebProgress, aRequest, curSelfProgress, maxSelfProgress, curTotalProgress, maxTotalProgress) {
+      monkeysphere.log("++++ tabPL progress change: " + curSelfProgress);
+      monkeysphere.logBrowserInfo(aBrowser);
     },
-    onStateChange: function() {
-      monkeysphere.log("++++ tabPL status change: " + aLocation.prePath);
+    onStateChange: function(aBrowser, aWebProgress, aRequest, aStateFlags, aStatus) {
+      monkeysphere.log("++++ tabPL status change: " + aRequest);
+      monkeysphere.logBrowserInfo(aBrowser);
     },
-    onStatusChange: function() {
-      monkeysphere.log("++++ tabPL status change: " + aLocation.prePath);
+    onStatusChange: function(aBrowser, aWebProgress, aRequest, aStatus, aMessage) {
+      monkeysphere.log("++++ tabPL status change: " + aRequest);
+      monkeysphere.logBrowserInfo(aBrowser);
     }
   },
 
+  logBrowserInfo: function(browser) {
+    if (typeof browser.monkeysphere === 'undefined') {
+      monkeysphere.log('--> nothing yet');
+    } else {
+      monkeysphere.log('--> ' + browser.monkeysphere.message);
+    }
+  },
+  
 ////////////////////////////////////////////////////////////
 // SITE URI CHECK FUNCTION
 ////////////////////////////////////////////////////////////
@@ -329,6 +343,10 @@ var monkeysphere = {
     client.setRequestHeader("Content-Length", query.length);
     client.setRequestHeader("Connection", "close");
     client.setRequestHeader("Accept", "application/json");
+    
+    browser.monkeysphere = {
+      message: 'foo bar'
+    };
 
     // setup the state change function
     client.onreadystatechange = function() {
@@ -370,7 +388,7 @@ var monkeysphere = {
 	  monkeysphere.log("site not verified.");
           monkeysphere.setStatus(monkeysphere.states.NOTVALID);
         }
-
+        browser.monkeysphere.message = response.message;
       } else {
 	monkeysphere.log("validation agent did not respond.");
 	//alert(monkeysphere.messages.getString("agentError"));
