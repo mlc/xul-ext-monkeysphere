@@ -25,3 +25,11 @@ IMPORTANT: NOTE THAT YOU MUST HAVE THE TRAILING SLASH
 Example for iceweasel testing:
 
 while true; do iceweasel -P extdev-msva -no-remote ; done
+
+
+I occasionally see a brief page with this message show before the
+certificateerror shows up:
+
+XML Parsing error: no element found
+Location: jar:file:///usr/lib/iceweasel/chrome/browser.jar!/content/browser/certerror/aboutCertError.xhtml
+Line number: 1, Column: 1
