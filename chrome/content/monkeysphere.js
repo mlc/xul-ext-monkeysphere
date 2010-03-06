@@ -213,9 +213,11 @@ var monkeysphere = {
     monkeysphere.log("checking security state: " + state);
     // if site secure...
     if(state & Components.interfaces.nsIWebProgressListener.STATE_IS_SECURE) {
-      // FIXME: if a monkeysphere-generated cert override is being used by this connection, then we should be setting the status from the override
-      monkeysphere.setStatus(browser, monkeysphere.states.NEUTRAL);
       monkeysphere.log("  site state SECURE.");
+      // if a monkeysphere-generated cert override is being used by this connection, then we should be setting the status from the override
+      var cert = browser.securityUI.SSLStatus.serverCert;
+
+      monkeysphere.setStatus(browser, monkeysphere.states.NEUTRAL);
       monkeysphere.log("done.");
       return;
 
@@ -316,16 +318,8 @@ var monkeysphere = {
 // AGENT QUERY FUNCTIONS
 ////////////////////////////////////////////////////////////
 
-  //////////////////////////////////////////////////////////
-  // query the validation agent
-  queryAgent: function(browser, cert) {
-    monkeysphere.log("#### querying validation agent ####");
-
-    monkeysphere.log("agent_socket: " + monkeysphere.agent_socket);
-
+  createAgentPostData: function(browser, cert) {
     var uri = browser.currentURI;
-    var host = uri.host;
-
     // get certificate info
     var cert_length = {};
     var dummy = {};
@@ -333,26 +327,48 @@ var monkeysphere = {
 
     // "agent post data"
     var apd = {
-      context: "https",
-      peer: host,
-      pkc: {
-        type: "x509der",
-        data: cert_data
+      data: {
+        context: uri.scheme,
+        peer: uri.hostPort,
+        pkc: {
+          type: "x509der",
+          data: cert_data
+        },
+      },
+      toJSON: function() {
+        return JSON.stringify(this.data);
+      },
+      toCacheLabel: function() {
+        return this.data.context + '|' + this.data.peer + '|' + this.data.pkc.type + '|' + this.data.pkc.data;
+      },
+      log: function() {
+        monkeysphere.log("agent post data:");
+        monkeysphere.log("  context: " + this.data.context);
+        monkeysphere.log("  peer: " + this.data.peer);
+        monkeysphere.log("  pkc.type: " + this.data.pkc.type);
+        //monkeysphere.log("  pkc.data: " + this.data.pkc.data); // this can be big
+        //monkeysphere.log("  JSON: " + this.toJSON());
       }
     };
+    apd.log();
+    return apd;
+  },
 
-    monkeysphere.log("agent post data:");
-    monkeysphere.log("  context: " + apd.context);
-    monkeysphere.log("  peer: " + apd.peer);
-    monkeysphere.log("  pkc.type: " + apd.pkc.type);
-    //monkeysphere.log("  pkc.data: " + apd.pkc.data); // this can be big
+  //////////////////////////////////////////////////////////
+  // query the validation agent
+
+  queryAgent: function(browser, cert) {
+    monkeysphere.log("#### querying validation agent ####");
+
+    monkeysphere.log("agent_socket: " + monkeysphere.agent_socket);
 
     // make JSON query string
-    var query = JSON.stringify(apd);
+    var client = new XMLHttpRequest();
+    client.apd = monkeysphere.createAgentPostData(browser, cert);
+    var query = client.apd.toJSON();
 
     var request_url = monkeysphere.agent_socket + "/reviewcert";
     monkeysphere.log("creating http request to " + request_url);
-    var client = new XMLHttpRequest();
     client.open("POST", request_url, true);
 
     // set headers
@@ -405,7 +421,7 @@ var monkeysphere = {
       } else {
         monkeysphere.log("validation agent did not respond.");
         //alert(monkeysphere.messages.getString("agentError"));
-        monkeysphere.setStatus(browser, monkeysphere.states.ERROR);
+        monkeysphere.setStatus(browser, monkeysphere.states.ERROR, monkeysphere.messages.getString('noResponseFromAgent'));
       }
 
       monkeysphere.updateDisplay();
@@ -476,6 +492,22 @@ var monkeysphere = {
   },
 
 ////////////////////////////////////////////////////////////
+// CACHE FUNCTIONS
+////////////////////////////////////////////////////////////
+
+  cache: (function() {
+    var responses = {};
+    return {
+      query: function(key) {
+        return responses[key];
+      },
+      set: function(key, value) {
+        responses[key] = value;
+      }
+    }
+  })(),
+
+////////////////////////////////////////////////////////////
 // CERT FUNCTIONS
 ////////////////////////////////////////////////////////////
 
@@ -519,9 +551,6 @@ var monkeysphere = {
   // https://developer.mozilla.org/En/How_to_check_the_security_state_of_an_XMLHTTPRequest_over_SSL
   printCertInfo: function(cert) {
     const Ci = Components.interfaces;
-
-    //if (secInfo instanceof Ci.nsISSLStatusProvider) {
-    //var cert = secInfo.QueryInterface(Ci.nsISSLStatusProvider).SSLStatus.QueryInterface(Ci.nsISSLStatus).serverCert;
 
     monkeysphere.log("certificate:");
     switch (cert.verifyForUsage(Ci.nsIX509Cert.CERT_USAGE_SSLServer)) {
