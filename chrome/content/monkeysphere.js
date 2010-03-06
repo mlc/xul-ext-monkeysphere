@@ -215,9 +215,14 @@ var monkeysphere = {
     if(state & Components.interfaces.nsIWebProgressListener.STATE_IS_SECURE) {
       monkeysphere.log("  site state SECURE.");
       // if a monkeysphere-generated cert override is being used by this connection, then we should be setting the status from the override
-      var cert = browser.securityUI.SSLStatus.serverCert;
+      var apd = monkeysphere.createAgentPostData(browser, browser.securityUI.SSLStatus.serverCert);
+      var response = monkeysphere.cache.get(apd);
+      if ( typeof response === 'undefined' ) {
+        monkeysphere.setStatus(browser, monkeysphere.states.NEUTRAL);
+      } else {
+        monkeysphere.setStatus(browser, monkeysphere.states.VALID, response.message);
+      }
 
-      monkeysphere.setStatus(browser, monkeysphere.states.NEUTRAL);
       monkeysphere.log("done.");
       return;
 
@@ -403,6 +408,8 @@ var monkeysphere = {
         var response = JSON.parse(client.responseText);
 
         if (response.valid) {
+
+          monkeysphere.cache.set(client.apd, response);
 
           // VALID!
           monkeysphere.log("SITE VERIFIED!");
