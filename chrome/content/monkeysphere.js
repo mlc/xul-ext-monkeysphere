@@ -266,7 +266,15 @@ var monkeysphere = {
       icon = window.opener.document.getElementById("monkeysphere-status-image");
     }
 
-    switch(browser.monkeysphere.state){
+    var state = monkeysphere.states.NEUTRAL;
+    var message = "";
+
+    if ( typeof browser.monkeysphere !== "undefined" ) {
+      state = browser.monkeysphere.state;
+      message = browser.monkeysphere.message;
+    }
+
+    switch(state){
       case monkeysphere.states.INPROGRESS:
         monkeysphere.log("set status: INPROGRESS");
         icon.setAttribute("src", "chrome://monkeysphere/content/progress.gif");
@@ -294,9 +302,9 @@ var monkeysphere = {
         break;
     }
 
-    if(browser.monkeysphere.message) {
-      monkeysphere.log("set message: " + browser.monkeysphere.message);
-      panel.setAttribute("tooltiptext", browser.monkeysphere.message);
+    if(message) {
+      monkeysphere.log("set message: " + message);
+      panel.setAttribute("tooltiptext", message);
     }
   },
 
