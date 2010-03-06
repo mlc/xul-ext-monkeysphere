@@ -213,6 +213,8 @@ var monkeysphere = {
     monkeysphere.log("checking security state: " + state);
     // if site secure...
     if(state & Components.interfaces.nsIWebProgressListener.STATE_IS_SECURE) {
+      // FIXME: if a monkeysphere-generated cert override is being used by this connection, then we should be setting the status from the override
+      monkeysphere.setStatus(browser, monkeysphere.states.NEUTRAL);
       monkeysphere.log("  site state SECURE.");
       monkeysphere.log("done.");
       return;
@@ -269,7 +271,7 @@ var monkeysphere = {
     var state = monkeysphere.states.NEUTRAL;
     var message = "";
 
-    if ( typeof browser.monkeysphere !== "undefined" ) {
+    if( typeof browser.monkeysphere !== "undefined" ) {
       state = browser.monkeysphere.state;
       message = browser.monkeysphere.message;
     }
@@ -302,10 +304,8 @@ var monkeysphere = {
         break;
     }
 
-    if(message) {
-      monkeysphere.log("set message: " + message);
-      panel.setAttribute("tooltiptext", message);
-    }
+    monkeysphere.log("set message: " + message);
+    panel.setAttribute("tooltiptext", message);
   },
 
 ////////////////////////////////////////////////////////////
@@ -356,10 +356,6 @@ var monkeysphere = {
     client.setRequestHeader("Content-Length", query.length);
     client.setRequestHeader("Connection", "close");
     client.setRequestHeader("Accept", "application/json");
-
-    browser.monkeysphere = {
-      message: 'foo bar'
-    };
 
     // setup the state change function
     client.onreadystatechange = function() {
@@ -481,6 +477,7 @@ var monkeysphere = {
   // FWIW, aWebProgress listener has:
   // securityUI = [xpconnect wrapped (nsISupports, nsISecureBrowserUI, nsISSLStatusProvider)]
   // but i don't think it can be used because it doesn't hold invalid cert info
+  // FIXME: is there a better way to get the cert for the actual current connection?
   getCertificate: function(uri) {
     try {
       var cert = monkeysphere.getInvalidCertSSLStatus(uri).QueryInterface(Components.interfaces.nsISSLStatus).serverCert;
