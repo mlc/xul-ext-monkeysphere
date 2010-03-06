@@ -7,5 +7,5 @@ statusINPROGRESS=Monkeysphere: querying validation agent...
 statusVALID=Monkeysphere: verified the security of your connection to this website and has bypassed Firefox's security error page.
 statusNOTVALID=Monkeysphere: unable to verify the security of your connection to this website.
 
-xulError="Monkeysphere error: could not determine status message.
-
+xulError=Monkeysphere error: could not determine status message.
+noResponseFromAgent=Monkeysphere Validation Agent did not respond.

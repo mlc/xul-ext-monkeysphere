@@ -405,7 +405,7 @@ var monkeysphere = {
       } else {
         monkeysphere.log("validation agent did not respond.");
         //alert(monkeysphere.messages.getString("agentError"));
-        monkeysphere.setStatus(browser, monkeysphere.states.ERROR);
+        monkeysphere.setStatus(browser, monkeysphere.states.ERROR, monkeysphere.messages.getString('noResponseFromAgent'));
       }
 
       monkeysphere.updateDisplay();
