@@ -492,19 +492,21 @@ var monkeysphere = {
   },
 
 ////////////////////////////////////////////////////////////
-// CACHE FUNCTIONS
+// CACHE OBJECT
 ////////////////////////////////////////////////////////////
 
+  // cache object to store and retrieve data about monkeysphere status for sites
+  // uses string of apd as key, and agent response as data
   cache: (function() {
     var responses = {};
     return {
-      query: function(key) {
-        return responses[key];
+      set: function(apd, agentResponse) {
+        responses[apd.toCacheLabel()] = agentResponse;
       },
-      set: function(key, value) {
-        responses[key] = value;
+      get: function(apd) {
+        return responses[apd.toCacheLabel()];
       }
-    }
+    };
   })(),
 
 ////////////////////////////////////////////////////////////
