@@ -79,9 +79,6 @@ var monkeysphere = {
   init: function() {
     monkeysphere.log("---- begin initialization ----");
 
-    // clear status
-    monkeysphere.setStatus();
-
     // get localization messages
     monkeysphere.messages = document.getElementById("message_strings");
 
@@ -206,7 +203,7 @@ var monkeysphere = {
 
     // if uri not relevant, return
     if(!monkeysphere.isRelevantURI(uri)) {
-      monkeysphere.setStatus(monkeysphere.states.NEUTRAL);
+      monkeysphere.setStatus(browser, monkeysphere.states.NEUTRAL);
       monkeysphere.log("done.");
       return;
     }
@@ -243,10 +240,28 @@ var monkeysphere = {
 ////////////////////////////////////////////////////////////
 // STATUS FUNCTIONS
 ////////////////////////////////////////////////////////////
+  
+  getDefaultStatusText: function(state) {
+    var labels  = {
+      monkeysphere.states.ERROR:  "statusError",
+      monkeysphere.states.NEUTRAL: "statusNeutral",
+      monkeysphere.states.INPROGRESS: "statusInProgress",
+      monkeysphere.states.VALID: "statusValid",
+      monkeysphere.states.NOTVALID: "statusNotValid"
+    };
+    monkeysphere.messages.getString(labels[state] || "xulError");
+  },
+
+  setStatus: function(browser, state, message) {
+    if ( typeof message === 'undefined' ) {
+      message = monkeysphere.getDefaultStatusText(state);
+    }
+    browser.monkeysphere = { state: state, message: message };
+  },
 
   //////////////////////////////////////////////////////////
   // set the status
-  setStatus: function(state, message) {
+  updateDisplay: function(state, message) {
     var panel = document.getElementById("monkeysphere-status");
     var icon = document.getElementById("monkeysphere-status-image");
 
@@ -356,7 +371,7 @@ var monkeysphere = {
     monkeysphere.log("sending query...");
     client.send(query);
     monkeysphere.log("query sent");
-    monkeysphere.setStatus(monkeysphere.states.INPROGRESS);
+    monkeysphere.setStatus(browser, monkeysphere.states.INPROGRESS);
   },
 
   //////////////////////////////////////////////////////////
@@ -381,18 +396,18 @@ var monkeysphere = {
           // reload page
           monkeysphere.log("reloading browser...");
           browser.webNavigation.reload(nsIWebNavigation.LOAD_FLAGS_NONE);
-          monkeysphere.setStatus(monkeysphere.states.VALID);
+          monkeysphere.setStatus(browser, monkeysphere.states.VALID, response.message);
         } else {
 
 	  // NOT VALID
 	  monkeysphere.log("site not verified.");
-          monkeysphere.setStatus(monkeysphere.states.NOTVALID);
+          monkeysphere.setStatus(browser, monkeysphere.states.NOTVALID, response.message);
         }
         browser.monkeysphere.message = response.message;
       } else {
 	monkeysphere.log("validation agent did not respond.");
 	//alert(monkeysphere.messages.getString("agentError"));
-        monkeysphere.setStatus(monkeysphere.states.ERROR);
+        monkeysphere.setStatus(browser, monkeysphere.states.ERROR);
       }
     }
   },
