@@ -49,15 +49,15 @@ var monkeysphere = {
     try {
       dump(message + "\n");
       try {
-	// this line works in extensions
-	Firebug.Console.log(message);
+        // this line works in extensions
+        Firebug.Console.log(message);
       } catch(e) {
-	// ignore, this will blow up if Firebug is not installed
+        // ignore, this will blow up if Firebug is not installed
       }
       try {
-	console.log(message); // this line works in HTML files
+        console.log(message); // this line works in HTML files
       } catch(e) {
-	// ignore, this will blow up if Firebug is not installed
+        // ignore, this will blow up if Firebug is not installed
       }
     } catch(e) {
       alert(e);
@@ -278,20 +278,20 @@ var monkeysphere = {
 
     switch(state){
       case monkeysphere.states.INPROGRESS:
-	monkeysphere.log("set status: INPROGRESS");
-	icon.setAttribute("src", "chrome://monkeysphere/content/progress.gif");
+        monkeysphere.log("set status: INPROGRESS");
+        icon.setAttribute("src", "chrome://monkeysphere/content/progress.gif");
         panel.hidden = false;
-	break;
+        break;
       case monkeysphere.states.VALID:
-	monkeysphere.log("set status: VALID");
-	icon.setAttribute("src", "chrome://monkeysphere/content/good.png");
+        monkeysphere.log("set status: VALID");
+        icon.setAttribute("src", "chrome://monkeysphere/content/good.png");
         panel.hidden = false;
-	break;
+        break;
       case monkeysphere.states.NOTVALID:
-	monkeysphere.log("set status: NOTVALID");
-	icon.setAttribute("src", "chrome://monkeysphere/content/bad.png");
+        monkeysphere.log("set status: NOTVALID");
+        icon.setAttribute("src", "chrome://monkeysphere/content/bad.png");
         panel.hidden = false;
-	break;
+        break;
       case monkeysphere.states.NEUTRAL:
         monkeysphere.log("set status: NEUTRAL");
         icon.setAttribute("src", "");
@@ -334,8 +334,8 @@ var monkeysphere = {
       context: "https",
       peer: host,
       pkc: {
-	type: "x509der",
-	data: cert_data
+        type: "x509der",
+        data: cert_data
       }
     };
 
@@ -386,27 +386,27 @@ var monkeysphere = {
     if (client.readyState == 4) {
       if (client.status == 200) {
 
-	var response = JSON.parse(client.responseText);
+        var response = JSON.parse(client.responseText);
 
         if (response.valid) {
 
-	  // VALID!
-	  monkeysphere.log("SITE VERIFIED!");
-	  monkeysphere.securityOverride(uri, cert);
+          // VALID!
+          monkeysphere.log("SITE VERIFIED!");
+          monkeysphere.securityOverride(uri, cert);
           // reload page
           monkeysphere.log("reloading browser...");
           browser.webNavigation.reload(nsIWebNavigation.LOAD_FLAGS_NONE);
           monkeysphere.setStatus(browser, monkeysphere.states.VALID, response.message);
         } else {
 
-	  // NOT VALID
-	  monkeysphere.log("site not verified.");
+          // NOT VALID
+          monkeysphere.log("site not verified.");
           monkeysphere.setStatus(browser, monkeysphere.states.NOTVALID, response.message);
         }
         browser.monkeysphere.message = response.message;
       } else {
-	monkeysphere.log("validation agent did not respond.");
-	//alert(monkeysphere.messages.getString("agentError"));
+        monkeysphere.log("validation agent did not respond.");
+        //alert(monkeysphere.messages.getString("agentError"));
         monkeysphere.setStatus(browser, monkeysphere.states.ERROR);
       }
     }
@@ -426,10 +426,10 @@ var monkeysphere = {
     var aOverrideBits = {};
     var aIsTemporary = {};
     status = monkeysphere.override.getValidityOverride(uri.asciiHost, uri.port,
-						       aHashAlg,
-						       aFingerprint,
-						       aOverrideBits,
-						       aIsTemporary);
+                                                       aHashAlg,
+                                                       aFingerprint,
+                                                       aOverrideBits,
+                                                       aIsTemporary);
     monkeysphere.log("current override status: " + status);
     return status;
   },
@@ -461,9 +461,9 @@ var monkeysphere = {
 
     monkeysphere.log("set cert override: " + uri.asciiHost + ":" + uri.port);
     monkeysphere.override.rememberValidityOverride(uri.asciiHost, uri.port,
-						   cert,
-						   overrideBits,
-						   true);
+                                                   cert,
+                                                   overrideBits,
+                                                   true);
 
     monkeysphere.log("**** CERT OVERRIDE SET ****");
   },
