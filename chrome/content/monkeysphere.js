@@ -29,7 +29,7 @@ var monkeysphere = {
   // agent URL from environment variable
   // "http://localhost:8901" <-- NO TRAILING SLASH
   agent_socket: [],
-  
+
   // default socket
   // FIXME: should be configurable via prefs.js
   default_socket: "http://localhost:8901",
@@ -110,8 +110,8 @@ var monkeysphere = {
   // https://developer.mozilla.org/en/nsIWebProgressListener
   progressListener: {
     onLocationChange: function(aWebProgress, aRequest, aLocation) {
-      monkeysphere.log("++++ location change: " + aLocation.prePath);
-      monkeysphere.logBrowserInfo(gBrowser);
+      monkeysphere.log("++++ PL location change: " + aLocation.prePath);
+      monkeysphere.updateDisplay(gBrowser.selectedBrowser);
     },
 
     onProgressChange: function() {},
@@ -137,7 +137,7 @@ var monkeysphere = {
       monkeysphere.logBrowserInfo(aBrowser);
     },
     onStateChange: function(aBrowser, aWebProgress, aRequest, aStateFlags, aStatus) {
-      monkeysphere.log("++++ tabPL status change: " + aRequest);
+      monkeysphere.log("++++ tabPL state change: " + aRequest);
       monkeysphere.logBrowserInfo(aBrowser);
     },
     onStatusChange: function(aBrowser, aWebProgress, aRequest, aStatus, aMessage) {
@@ -146,14 +146,6 @@ var monkeysphere = {
     }
   },
 
-  logBrowserInfo: function(browser) {
-    if (typeof browser.monkeysphere === 'undefined') {
-      monkeysphere.log('--> nothing yet');
-    } else {
-      monkeysphere.log('--> ' + browser.monkeysphere.message);
-    }
-  },
-  
 ////////////////////////////////////////////////////////////
 // SITE URI CHECK FUNCTION
 ////////////////////////////////////////////////////////////
@@ -240,7 +232,7 @@ var monkeysphere = {
 ////////////////////////////////////////////////////////////
 // STATUS FUNCTIONS
 ////////////////////////////////////////////////////////////
-  
+
   getDefaultStatusText: function(state) {
     var key = monkeysphere.states.state ? ("status" + state) : "xulError";
     return monkeysphere.messages.getString(key);
@@ -255,7 +247,7 @@ var monkeysphere = {
 
   //////////////////////////////////////////////////////////
   // set the status
-  updateDisplay: function(state, message) {
+  updateDisplay: function(browser) {
     var panel = document.getElementById("monkeysphere-status");
     var icon = document.getElementById("monkeysphere-status-image");
 
@@ -266,11 +258,7 @@ var monkeysphere = {
       icon = window.opener.document.getElementById("monkeysphere-status-image");
     }
 
-    if(!state) {
-      state = monkeysphere.states.NEUTRAL;
-    }
-
-    switch(state){
+    switch(browser.monkeysphere.state){
       case monkeysphere.states.INPROGRESS:
         monkeysphere.log("set status: INPROGRESS");
         icon.setAttribute("src", "chrome://monkeysphere/content/progress.gif");
@@ -298,9 +286,9 @@ var monkeysphere = {
         break;
     }
 
-    if(message) {
-      monkeysphere.log("set message: " + message);
-      panel.setAttribute("tooltiptext", message);
+    if(browser.monkeysphere.message) {
+      monkeysphere.log("set message: " + browser.monkeysphere.message);
+      panel.setAttribute("tooltiptext", browser.monkeysphere.message);
     }
   },
 
@@ -352,7 +340,7 @@ var monkeysphere = {
     client.setRequestHeader("Content-Length", query.length);
     client.setRequestHeader("Connection", "close");
     client.setRequestHeader("Accept", "application/json");
-    
+
     browser.monkeysphere = {
       message: 'foo bar'
     };
