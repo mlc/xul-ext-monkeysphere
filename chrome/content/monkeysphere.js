@@ -242,7 +242,7 @@ var monkeysphere = {
 ////////////////////////////////////////////////////////////
   
   getDefaultStatusText: function(state) {
-    var key = monkeysphere.states.state ? ("status" + state) : "xulError";
+    var key = (typeof monkeysphere.states.state !== 'undefined') ? ("status" + state) : "xulError";
     return monkeysphere.messages.getString(key);
   },
 
