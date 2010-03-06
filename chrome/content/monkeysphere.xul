@@ -40,7 +40,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
   <statusbar id="status-bar">
 
     <statusbarpanel id="monkeysphere-status"
-      		    tooltiptext="Monkeysphere">
+                    tooltiptext="Monkeysphere"
+                    hidden="true">
       <image id="monkeysphere-status-image"
 	     src="chrome://monkeysphere/content/default.png"
 	     style="width:16px; height:16px;" 
