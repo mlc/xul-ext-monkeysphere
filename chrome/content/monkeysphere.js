@@ -146,6 +146,14 @@ var monkeysphere = {
     }
   },
 
+  logBrowserInfo: function(browser) {
+    if (typeof browser.monkeysphere === 'undefined') {
+      monkeysphere.log('--> nothing yet');
+    } else {
+      monkeysphere.log('--> ' + browser.monkeysphere.message);
+    }
+  },
+
 ////////////////////////////////////////////////////////////
 // SITE URI CHECK FUNCTION
 ////////////////////////////////////////////////////////////
