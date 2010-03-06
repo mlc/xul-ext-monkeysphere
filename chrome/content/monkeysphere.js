@@ -111,7 +111,7 @@ var monkeysphere = {
   progressListener: {
     onLocationChange: function(aWebProgress, aRequest, aLocation) {
       monkeysphere.log("++++ PL location change: " + aLocation.prePath);
-      monkeysphere.updateDisplay(gBrowser.selectedBrowser);
+      monkeysphere.updateDisplay();
     },
 
     onProgressChange: function() {},
@@ -252,18 +252,22 @@ var monkeysphere = {
     if ( typeof message === 'undefined' ) {
       message = monkeysphere.getDefaultStatusText(state);
     }
+    monkeysphere.log("setStatus: " + state + ', ' + message);
     browser.monkeysphere = { state: state, message: message };
   },
 
   //////////////////////////////////////////////////////////
   // set the status
-  updateDisplay: function(browser) {
+  updateDisplay: function() {
+    var browser = gBrowser.selectedBrowser;
     var panel = document.getElementById("monkeysphere-status");
     var icon = document.getElementById("monkeysphere-status-image");
 
+    monkeysphere.log("updateDisplay:");
+
     // the following happens when called from a dialog
     if(!panel || !icon) {
-      monkeysphere.log("setStatus: falling back to window.opener");
+      monkeysphere.log("updateDisplay: falling back to window.opener");
       panel = window.opener.document.getElementById("monkeysphere-status");
       icon = window.opener.document.getElementById("monkeysphere-status-image");
     }
@@ -278,33 +282,33 @@ var monkeysphere = {
 
     switch(state){
       case monkeysphere.states.INPROGRESS:
-        monkeysphere.log("set status: INPROGRESS");
+        monkeysphere.log("  status: INPROGRESS");
         icon.setAttribute("src", "chrome://monkeysphere/content/progress.gif");
         panel.hidden = false;
         break;
       case monkeysphere.states.VALID:
-        monkeysphere.log("set status: VALID");
+        monkeysphere.log("  status: VALID");
         icon.setAttribute("src", "chrome://monkeysphere/content/good.png");
         panel.hidden = false;
         break;
       case monkeysphere.states.NOTVALID:
-        monkeysphere.log("set status: NOTVALID");
+        monkeysphere.log("  status: NOTVALID");
         icon.setAttribute("src", "chrome://monkeysphere/content/bad.png");
         panel.hidden = false;
         break;
       case monkeysphere.states.NEUTRAL:
-        monkeysphere.log("set status: NEUTRAL");
+        monkeysphere.log("  status: NEUTRAL");
         icon.setAttribute("src", "");
         panel.hidden = true;
         break;
       case monkeysphere.states.ERROR:
-        monkeysphere.log("set status: ERROR");
+        monkeysphere.log("  status: ERROR");
         icon.setAttribute("src", "chrome://monkeysphere/content/error.png");
         panel.hidden = false;
         break;
     }
 
-    monkeysphere.log("set message: " + message);
+    monkeysphere.log("  message: " + message);
     panel.setAttribute("tooltiptext", message);
   },
 
@@ -403,6 +407,8 @@ var monkeysphere = {
         //alert(monkeysphere.messages.getString("agentError"));
         monkeysphere.setStatus(browser, monkeysphere.states.ERROR);
       }
+
+      monkeysphere.updateDisplay();
     }
   },
 
