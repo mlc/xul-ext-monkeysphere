@@ -242,13 +242,10 @@ var monkeysphere = {
 ////////////////////////////////////////////////////////////
   
   getDefaultStatusText: function(state) {
-    var labels  = {
-      monkeysphere.states.ERROR:  "statusError",
-      monkeysphere.states.NEUTRAL: "statusNeutral",
-      monkeysphere.states.INPROGRESS: "statusInProgress",
-      monkeysphere.states.VALID: "statusValid",
-      monkeysphere.states.NOTVALID: "statusNotValid"
-    };
+    var labels = {};
+    for (state in monkeysphere.states) {
+      labels[monkeysphere.states.state] = "status" + state;
+    }
     monkeysphere.messages.getString(labels[state] || "xulError");
   },
 
