@@ -242,11 +242,8 @@ var monkeysphere = {
 ////////////////////////////////////////////////////////////
   
   getDefaultStatusText: function(state) {
-    var labels = {};
-    for (state in monkeysphere.states) {
-      labels[monkeysphere.states.state] = "status" + state;
-    }
-    monkeysphere.messages.getString(labels[state] || "xulError");
+    var key = monkeysphere.states.state ? ("status" + state) : "xulError";
+    return monkeysphere.messages.getString(key);
   },
 
   setStatus: function(browser, state, message) {
