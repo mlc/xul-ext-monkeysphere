@@ -128,17 +128,17 @@ var monkeysphere = {
     },
 
     onLocationChange: function(aBrowser, aWebProgress, aRequest, aLocation) {
-      monkeysphere.log("++++ tabPL location change: " + aLocation.prePath);
+      //monkeysphere.log("++++ tabPL location change: " + aLocation.prePath);
     },
     onProgressChange: function(aBrowser, awebProgress, aRequest, curSelfProgress, maxSelfProgress, curTotalProgress, maxTotalProgress) {
-      monkeysphere.log("++++ tabPL progress change: " + curSelfProgress);
+      //monkeysphere.log("++++ tabPL progress change: " + curSelfProgress);
     },
     onStateChange: function(aBrowser, aWebProgress, aRequest, aStateFlags, aStatus) {
       monkeysphere.log("++++ tabPL state change: " + aRequest);
       monkeysphere.updateDisplay();
     },
     onStatusChange: function(aBrowser, aWebProgress, aRequest, aStatus, aMessage) {
-      monkeysphere.log("++++ tabPL status change: " + aRequest);
+      //monkeysphere.log("++++ tabPL status change: " + aRequest);
     }
   },
 
@@ -189,10 +189,11 @@ var monkeysphere = {
   checkSite: function(browser, state) {
     var uri = browser.currentURI;
 
+    monkeysphere.log("check site:");
+
     // if uri not relevant, return
     if(!monkeysphere.isRelevantURI(uri)) {
       monkeysphere.setStatus(browser, monkeysphere.states.NEUTRAL);
-      monkeysphere.log("done.");
       return;
     }
 
@@ -211,8 +212,6 @@ var monkeysphere = {
       } else {
         monkeysphere.setStatus(browser, monkeysphere.states.VALID, response.message);
       }
-
-      monkeysphere.log("done.");
       return;
 
     // if site insecure continue
@@ -241,7 +240,7 @@ var monkeysphere = {
     if ( typeof message === 'undefined' ) {
       message = monkeysphere.getDefaultStatusText(state);
     }
-    monkeysphere.log("setStatus: " + state + ', ' + message);
+    monkeysphere.log("set status: " + state + ', ' + message);
     browser.monkeysphere = { state: state, message: message };
   },
 
@@ -263,7 +262,7 @@ var monkeysphere = {
     var panel = document.getElementById("monkeysphere-status");
     var icon = document.getElementById("monkeysphere-status-image");
 
-    monkeysphere.log("updateDisplay:");
+    monkeysphere.log("update display:");
 
     // the following happens when called from a dialog
     if(!panel || !icon) {
@@ -351,7 +350,6 @@ var monkeysphere = {
       }
     };
 
-    apd.log();
     return apd;
   },
 
@@ -367,6 +365,7 @@ var monkeysphere = {
 
     // make JSON query string
     client.apd = monkeysphere.createAgentPostData(browser, cert);
+    client.apd.log();
     var query = client.apd.toJSON();
 
     var request_url = monkeysphere.agent_socket + "/reviewcert";
@@ -411,10 +410,11 @@ var monkeysphere = {
           // VALID!
           monkeysphere.log("SITE VERIFIED!");
           monkeysphere.securityOverride(uri, cert);
+          monkeysphere.setStatus(browser, monkeysphere.states.VALID, response.message);
+
           // reload page
           monkeysphere.log("reloading browser...");
           browser.webNavigation.reload(nsIWebNavigation.LOAD_FLAGS_NONE);
-          monkeysphere.setStatus(browser, monkeysphere.states.VALID, response.message);
 
         } else {
 
@@ -509,6 +509,8 @@ var monkeysphere = {
     var responses = {};
     return {
       set: function(apd, agentResponse) {
+        monkeysphere.log("set cache:");
+        apd.log();
         responses[apd.toCacheLabel()] = agentResponse;
       },
       get: function(apd) {
