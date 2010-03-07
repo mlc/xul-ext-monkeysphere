@@ -240,8 +240,15 @@ var monkeysphere = {
       var key = "status" + state;
       message = monkeysphere.messages.getString(key);
     }
-    monkeysphere.log("set status: " + state + ', ' + message);
+    monkeysphere.log("set browser status: " + state + ', ' + message);
     browser.monkeysphere = { state: state, message: message };
+  },
+
+  //////////////////////////////////////////////////////////
+  // clear site monkeysphere status for browser
+  clearStatus: function(browser) {
+    monkeysphere.log("clear browser status");
+    delete browser.monkeysphere;
   },
 
 ////////////////////////////////////////////////////////////
