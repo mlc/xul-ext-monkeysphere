@@ -135,6 +135,7 @@ var monkeysphere = {
     },
     onStateChange: function(aBrowser, aWebProgress, aRequest, aStateFlags, aStatus) {
       monkeysphere.log("++++ tabPL state change: " + aRequest);
+      monkeysphere.updateDisplay();
     },
     onStatusChange: function(aBrowser, aWebProgress, aRequest, aStatus, aMessage) {
       monkeysphere.log("++++ tabPL status change: " + aRequest);
