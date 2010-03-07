@@ -18,13 +18,12 @@
 // Monkeysphere global namespace
 var monkeysphere = {
 
-  states: {
-    ERROR:     -1, // there was a monkeysphere processing error
-    NEUTRAL:    0, // neutral on this site (no icon)
-    INPROGRESS: 1, // in progress (querying agent)
-    VALID:      2, // processed and validated
-    NOTVALID:   3  // processed and not validated
-  },
+  // MONKEYSPHERE STATES:
+  // ERROR      : there was a monkeysphere processing error
+  // NEUTRAL    :  neutral on this site (no icon)
+  // INPROGRESS : in progress (querying agent)
+  // VALID      : processed and validated
+  // NOTVALID   : processed and not validated
 
   // agent URL from environment variable
   // "http://localhost:8901" <-- NO TRAILING SLASH
@@ -193,7 +192,7 @@ var monkeysphere = {
 
     // if uri not relevant, return
     if(!monkeysphere.isRelevantURI(uri)) {
-      monkeysphere.setStatus(browser, monkeysphere.states.NEUTRAL);
+      monkeysphere.setStatus(browser, 'NEUTRAL');
       return;
     }
 
@@ -208,9 +207,9 @@ var monkeysphere = {
       var apd = monkeysphere.createAgentPostData(browser, browser.securityUI.SSLStatus.serverCert);
       var response = monkeysphere.cache.get(apd);
       if ( typeof response === 'undefined' ) {
-        monkeysphere.setStatus(browser, monkeysphere.states.NEUTRAL);
+        monkeysphere.setStatus(browser, 'NEUTRAL');
       } else {
-        monkeysphere.setStatus(browser, monkeysphere.states.VALID, response.message);
+        monkeysphere.setStatus(browser, 'VALID', response.message);
       }
       return;
 
@@ -238,17 +237,11 @@ var monkeysphere = {
   // set site monkeysphere status
   setStatus: function(browser, state, message) {
     if ( typeof message === 'undefined' ) {
-      message = monkeysphere.getDefaultStatusText(state);
+      var key = "status" + state;
+      message = monkeysphere.messages.getString(key);
     }
     monkeysphere.log("set status: " + state + ', ' + message);
     browser.monkeysphere = { state: state, message: message };
-  },
-
-  //////////////////////////////////////////////////////////
-  // get default status message
-  getDefaultStatusText: function(state) {
-    var key = (typeof monkeysphere.states.state !== 'undefined') ? ("status" + state) : "xulError";
-    return monkeysphere.messages.getString(key);
   },
 
 ////////////////////////////////////////////////////////////
@@ -272,7 +265,7 @@ var monkeysphere = {
     }
 
     // set state neutral by default
-    var state = monkeysphere.states.NEUTRAL;
+    var state = 'NEUTRAL';
     var message = "";
 
     // set from the browser monkeysphere state object if available
@@ -281,29 +274,25 @@ var monkeysphere = {
       message = browser.monkeysphere.message;
     }
 
+    monkeysphere.log("  state: " + state);
     switch(state){
-      case monkeysphere.states.INPROGRESS:
-        monkeysphere.log("  status: INPROGRESS");
+      case 'INPROGRESS':
         icon.setAttribute("src", "chrome://monkeysphere/content/progress.gif");
         panel.hidden = false;
         break;
-      case monkeysphere.states.VALID:
-        monkeysphere.log("  status: VALID");
+      case 'VALID':
         icon.setAttribute("src", "chrome://monkeysphere/content/good.png");
         panel.hidden = false;
         break;
-      case monkeysphere.states.NOTVALID:
-        monkeysphere.log("  status: NOTVALID");
+      case 'NOTVALID':
         icon.setAttribute("src", "chrome://monkeysphere/content/bad.png");
         panel.hidden = false;
         break;
-      case monkeysphere.states.NEUTRAL:
-        monkeysphere.log("  status: NEUTRAL");
+      case 'NEUTRAL':
         icon.setAttribute("src", "");
         panel.hidden = true;
         break;
-      case monkeysphere.states.ERROR:
-        monkeysphere.log("  status: ERROR");
+      case 'ERROR':
         icon.setAttribute("src", "chrome://monkeysphere/content/error.png");
         panel.hidden = false;
         break;
@@ -386,7 +375,7 @@ var monkeysphere = {
     monkeysphere.log("sending query...");
     client.send(query);
     monkeysphere.log("query sent");
-    monkeysphere.setStatus(browser, monkeysphere.states.INPROGRESS);
+    monkeysphere.setStatus(browser, 'INPROGRESS');
   },
 
   //////////////////////////////////////////////////////////
@@ -410,7 +399,7 @@ var monkeysphere = {
           // VALID!
           monkeysphere.log("SITE VERIFIED!");
           monkeysphere.securityOverride(uri, cert);
-          monkeysphere.setStatus(browser, monkeysphere.states.VALID, response.message);
+          monkeysphere.setStatus(browser, 'VALID', response.message);
 
           // reload page
           monkeysphere.log("reloading browser...");
@@ -420,13 +409,13 @@ var monkeysphere = {
 
           // NOT VALID
           monkeysphere.log("site not verified.");
-          monkeysphere.setStatus(browser, monkeysphere.states.NOTVALID, response.message);
+          monkeysphere.setStatus(browser, 'NOTVALID', response.message);
 
         }
       } else {
         monkeysphere.log("validation agent did not respond.");
         //alert(monkeysphere.messages.getString("agentError"));
-        monkeysphere.setStatus(browser, monkeysphere.states.ERROR, monkeysphere.messages.getString('noResponseFromAgent'));
+        monkeysphere.setStatus(browser, 'ERROR', monkeysphere.messages.getString('noResponseFromAgent'));
       }
 
       // update the current display, so that if we're looking at the
