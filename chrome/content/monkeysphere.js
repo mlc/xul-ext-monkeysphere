@@ -504,6 +504,11 @@ var monkeysphere = {
       },
       get: function(apd) {
         return responses[apd.toCacheLabel()];
+      },
+      clear: function(apd) {
+        monkeysphere.log("clear cache:");
+        apd.log();
+        delete responses[apd.toCacheLabel()];
       }
     };
   })(),
