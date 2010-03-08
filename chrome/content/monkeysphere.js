@@ -623,8 +623,18 @@ var monkeysphere = {
 
   contextMenuFunctions: {
     clearSite: function() {
-      var uri = gBrowser.currentURI;
+      monkeysphere.log("--- clear site ---");
+      var browser = gBrowser.selectedBrowser;
+      var uri = browser.currentURI;
       monkeysphere.clearOverride(uri);
+      monkeysphere.clearStatus(browser);
+      try {
+        var apd = monkeysphere.createAgentPostData(browser, browser.securityUI.SSLStatus.serverCert);
+        monkeysphere.cache.clear(apd);
+      } catch(e) {
+        monkeysphere.log("no valid cert for site found");
+      }
+      monkeysphere.updateDisplay();
     },
     certs: function() {
       openDialog("chrome://pippki/content/certManager.xul", "Certificate Manager");

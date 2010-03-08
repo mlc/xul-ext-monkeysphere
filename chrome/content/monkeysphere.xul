@@ -50,7 +50,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
     <popupset>
       <popup id="monkeysphere-contextmenu" position="after_start">
-	<menuitem label="Clear Site Monkeysphere Status"
+        <!-- FIXME: need locales stuff for these labels -->
+        <menuitem label="Clear site Monkeysphere exception"
 		  oncommand="monkeysphere.contextMenuFunctions.clearSite()" />
 	<menuitem label="Help"
 		  oncommand="monkeysphere.contextMenuFunctions.help()" />
