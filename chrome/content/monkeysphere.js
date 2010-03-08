@@ -1,6 +1,8 @@
 // Monkeysphere XUL extension
 // Copyright © 2010 Jameson Rollins <jrollins@finestructure.net>,
-//                  Daniel Kahn Gillmor <dkg@fifthhorseman.net>
+//                  Daniel Kahn Gillmor <dkg@fifthhorseman.net>,
+//                  mike castleman <m@mlcastle.net>,
+//                  Matthew James Goins <mjgoins@openflows.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
