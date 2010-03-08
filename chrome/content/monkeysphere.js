@@ -1,6 +1,8 @@
 // Monkeysphere XUL extension
 // Copyright © 2010 Jameson Rollins <jrollins@finestructure.net>,
-//                  Daniel Kahn Gillmor <dkg@fifthhorseman.net>
+//                  Daniel Kahn Gillmor <dkg@fifthhorseman.net>,
+//                  mike castleman <m@mlcastle.net>,
+//                  Matthew James Goins <mjgoins@openflows.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,14 +31,12 @@ var monkeysphere = {
   // "http://localhost:8901" <-- NO TRAILING SLASH
   agent_socket: [],
 
-  // default socket
-  // FIXME: should be configurable via prefs.js
-  default_socket: "http://localhost:8901",
-
   // override service class
   // http://www.oxymoronical.com/experiments/xpcomref/applications/Firefox/3.5/interfaces/nsICertOverrideService
   override: Components.classes["@mozilla.org/security/certoverride;1"].getService(Components.interfaces.nsICertOverrideService),
 
+  prefs: Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService).getBranch("extensions.monkeysphere."),
+  
 ////////////////////////////////////////////////////////////
 // LOG FUNCTIONS
 ////////////////////////////////////////////////////////////
@@ -80,15 +80,28 @@ var monkeysphere = {
 
     // get localization messages
     monkeysphere.messages = document.getElementById("message_strings");
-
+    
+    var envvar = "MONKEYSPHERE_VALIDATION_AGENT_SOCKET";;
+    try {
+      envvar = monkeysphere.prefs.getCharPref("validation_agent_socket_environment_variable");
+    } catch (e) {
+      monkeysphere.log("falling back to built-in environment variable: " + envvar);
+    }
+    monkeysphere.log("using environment variable " + envvar);
     // get the agent URL from the environment
     // https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIEnvironment
-    monkeysphere.agent_socket = Components.classes["@mozilla.org/process/environment;1"].getService(Components.interfaces.nsIEnvironment).get("MONKEYSPHERE_VALIDATION_AGENT_SOCKET");
+    monkeysphere.agent_socket = Components.classes["@mozilla.org/process/environment;1"].getService(Components.interfaces.nsIEnvironment).get(envvar);
     // return error if agent URL not set
     if(!monkeysphere.agent_socket) {
-      var message = "MONKEYSPHERE_VALIDATION_AGENT_SOCKET environment variable not set.  Using default of " + monkeysphere.default_socket;
-      alert(message);
-      monkeysphere.agent_socket = monkeysphere.default_socket;
+      var default_socket = "http://localhost:8901";;
+      try {
+        default_socket = monkeysphere.prefs.getCharPref("default_socket");
+      } catch (e) {
+        monkeysphere.log("falling back to built-in default socket location: " + default_socket);
+      }
+
+      monkeysphere.log(envvar + " environment variable not set.  Using default of " + default_socket);
+      monkeysphere.agent_socket = default_socket;
     }
     // replace trailing slashes
     monkeysphere.agent_socket = monkeysphere.agent_socket.replace(/\/*$/, '');
