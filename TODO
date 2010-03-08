@@ -1,6 +1,0 @@
-- bind "monkeysphere info" to temporary cert override (needed for status bar)
-- initialization check that agent is running
-- give "monkeysphere" info in:
-  - favicon
-  - cert validity in certificate view dialog for site
-- fix documentation
