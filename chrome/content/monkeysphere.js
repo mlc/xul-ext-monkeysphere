@@ -186,9 +186,9 @@ var monkeysphere = {
   //////////////////////////////////////////////////////////
   // check site monkeysphere status
   checkSite: function(browser, state) {
-    var uri = browser.currentURI;
-
     monkeysphere.log("check site:");
+
+    var uri = browser.currentURI;
 
     // if uri not relevant, return
     if(!monkeysphere.isRelevantURI(uri)) {
@@ -258,11 +258,11 @@ var monkeysphere = {
   //////////////////////////////////////////////////////////
   // update the display for the currently visible browser
   updateDisplay: function() {
+    monkeysphere.log("update display:");
+
     var browser = gBrowser.selectedBrowser;
     var panel = document.getElementById("monkeysphere-status");
     var icon = document.getElementById("monkeysphere-status-image");
-
-    monkeysphere.log("update display:");
 
     // the following happens when called from a dialog
     if(!panel || !icon) {
@@ -388,8 +388,6 @@ var monkeysphere = {
   //////////////////////////////////////////////////////////
   // when the XMLHttpRequest to the agent state changes
   onAgentStateChange: function(client, browser, cert) {
-    var uri = browser.currentURI;
-
     monkeysphere.log("agent query state change: " + client.readyState);
     monkeysphere.log("  status: " + client.status);
     monkeysphere.log("  response: " + client.responseText);
@@ -405,7 +403,7 @@ var monkeysphere = {
 
           // VALID!
           monkeysphere.log("SITE VERIFIED!");
-          monkeysphere.securityOverride(uri, cert);
+          monkeysphere.securityOverride(browser.currentURI, cert);
           monkeysphere.setStatus(browser, 'VALID', response.message);
 
           // reload page
