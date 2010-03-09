@@ -11,7 +11,7 @@ Vcs-Git: git://git.monkeysphere.info/xul-ext-monkeysphere
 
 Package: xul-ext-monkeysphere
 Architecture: all
-Depends: ${misc:Depends}
+Depends: ${misc:Depends}, monkeysphere-validation-agent
 Recommends: ${xpi:Recommends}
 Provides: ${xpi:Provides}
 Enhances: ${xpi:Enhances}
