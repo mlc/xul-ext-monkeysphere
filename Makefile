@@ -9,7 +9,7 @@ xpi:
 	git archive --format=zip --output=monkeysphere.xpi HEAD
 
 debian-package:
-	git buildpackage -uc -us --git-upstream-branch=master --git-debian-branch=debian
+	git buildpackage -uc -us --git-upstream-branch=master --git-debian-branch=debian --git-no-pristine-tar
 
 clean:
 	rm -f monkeysphere.xpi
