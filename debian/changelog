@@ -3,9 +3,12 @@ xul-ext-monkeysphere (0.1~pre-1) UNRELEASED; urgency=low
   [ Micah Anderson ]
   * Removed unnecessary installation of TODO, NOTES and Makefile
     from extension directory
-  * Fix trailing tilde on mozilla-devscripts version
 
+  [ Daniel Kahn Gillmor ]
+  * removed build-dependency on cdbs
+  
   [ Jameson Rollins ]
   * New upstream initial release to Debian
 
- -- Jameson Rollins <jrollins@finestructure.net>  Sun, 14 Feb 2010 15:40:14 -0500
+ -- Daniel Kahn Gillmor <dkg@fifthhorseman.net>  Tue, 09 Mar 2010 13:24:35 -0500
+
