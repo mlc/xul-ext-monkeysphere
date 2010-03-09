@@ -11,8 +11,9 @@ Vcs-Git: git://git.monkeysphere.info/xul-ext-monkeysphere
 
 Package: xul-ext-monkeysphere
 Architecture: all
-Depends: ${misc:Depends}, monkeysphere-validation-agent
-Recommends: ${xpi:Recommends}
+Depends: ${misc:Depends}
+Recommends: ${xpi:Recommends},
+ monkeysphere-validation-agent
 Provides: ${xpi:Provides}
 Enhances: ${xpi:Enhances}
 Description: Iceweasel/Firefox extension for using Monkeysphere on the web
