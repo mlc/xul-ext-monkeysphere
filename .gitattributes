@@ -1,4 +1,3 @@
 .git* export-ignore
 NOTES export-ignore
 Makefile export-ignore
-Changelog export-ignore
