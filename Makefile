@@ -12,6 +12,6 @@ debian-package:
 	git buildpackage -uc -us --git-upstream-branch=master --git-debian-branch=debian
 
 clean:
-	rm xul-ext-monkeysphere.xpi
+	rm -f monkeysphere.xpi
 
 .PHONY: xpi clean debian-package
