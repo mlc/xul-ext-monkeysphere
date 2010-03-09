@@ -31,10 +31,11 @@ var monkeysphere = {
   // "http://localhost:8901" <-- NO TRAILING SLASH
   agent_socket: [],
 
-  // override service class
+  // certificate override service class
   // http://www.oxymoronical.com/experiments/xpcomref/applications/Firefox/3.5/interfaces/nsICertOverrideService
-  override: Components.classes["@mozilla.org/security/certoverride;1"].getService(Components.interfaces.nsICertOverrideService),
+  certOverrideService: Components.classes["@mozilla.org/security/certoverride;1"].getService(Components.interfaces.nsICertOverrideService),
 
+  // preferences in about:config
   prefs: Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService).getBranch("extensions.monkeysphere."),
 
 ////////////////////////////////////////////////////////////
@@ -217,8 +218,9 @@ var monkeysphere = {
       monkeysphere.log("  site state SECURE.");
 
       // if a monkeysphere-generated cert override is being used by this connection, then we should be setting the status from the override
-      var apd = monkeysphere.createAgentPostData(browser, browser.securityUI.SSLStatus.serverCert);
-      var response = monkeysphere.cache.get(apd);
+      var cert = browser.securityUI.SSLStatus.serverCert;
+      var apd = monkeysphere.createAgentPostData(uri, cert);
+      var response = monkeysphere.overrides.response(apd);
       if ( typeof response === 'undefined' ) {
         monkeysphere.setStatus(browser, 'NEUTRAL');
       } else {
@@ -238,7 +240,7 @@ var monkeysphere = {
     ////////////////////////////////////////
     // get site certificate
     monkeysphere.log("retrieving site certificate:");
-    var cert = monkeysphere.getCertificate(uri);
+    var cert = monkeysphere.getInvalidCert(uri);
 
     ////////////////////////////////////////
     // finally go ahead and query the agent
@@ -326,8 +328,7 @@ var monkeysphere = {
 // AGENT QUERY FUNCTIONS
 ////////////////////////////////////////////////////////////
 
-  createAgentPostData: function(browser, cert) {
-    var uri = browser.currentURI;
+  createAgentPostData: function(uri, cert) {
     // get certificate info
     var cert_length = {};
     var dummy = {};
@@ -335,18 +336,20 @@ var monkeysphere = {
 
     // "agent post data"
     var apd = {
+      uri: uri,
+      cert: cert,
       data: {
         context: uri.scheme,
         peer: uri.hostPort,
         pkc: {
           type: "x509der",
           data: cert_data
-        },
+        }
       },
       toJSON: function() {
         return JSON.stringify(this.data);
       },
-      toCacheLabel: function() {
+      toOverrideLabel: function() {
         return this.data.context + '|' + this.data.peer + '|' + this.data.pkc.type + '|' + this.data.pkc.data;
       },
       log: function() {
@@ -369,11 +372,13 @@ var monkeysphere = {
 
     monkeysphere.log("agent_socket: " + monkeysphere.agent_socket);
 
+    var uri = browser.currentURI;
+
     // make the client request object
     var client = new XMLHttpRequest();
 
     // make JSON query string
-    client.apd = monkeysphere.createAgentPostData(browser, cert);
+    client.apd = monkeysphere.createAgentPostData(uri, cert);
     client.apd.log();
     var query = client.apd.toJSON();
 
@@ -412,11 +417,9 @@ var monkeysphere = {
 
         if (response.valid) {
 
-          monkeysphere.cache.set(client.apd, response);
-
           // VALID!
           monkeysphere.log("SITE VERIFIED!");
-          monkeysphere.securityOverride(browser.currentURI, cert);
+          monkeysphere.overrides.set(client.apd, response);
           monkeysphere.setStatus(browser, 'VALID', response.message);
 
           // reload page
@@ -443,90 +446,85 @@ var monkeysphere = {
   },
 
 ////////////////////////////////////////////////////////////
-// OVERRIDE FUNCTIONS
+// OVERRIDE CACHE OBJECT
 ////////////////////////////////////////////////////////////
 
   //////////////////////////////////////////////////////////
-  // get current validity override status
-  checkOverrideStatus: function(uri) {
-    // the status return is a bool, true for override set
-    var status;
-    var aHashAlg = {};
-    var aFingerprint = {};
-    var aOverrideBits = {};
-    var aIsTemporary = {};
-    status = monkeysphere.override.getValidityOverride(uri.asciiHost, uri.port,
-                                                       aHashAlg,
-                                                       aFingerprint,
-                                                       aOverrideBits,
-                                                       aIsTemporary);
-    monkeysphere.log("current override status: " + status);
-    return status;
-  },
-
-  //////////////////////////////////////////////////////////
-  // browser security override function
-  securityOverride: function(uri, cert) {
-    monkeysphere.log("**** CERT SECURITY OVERRIDE ****");
-
-    var SSLStatus = monkeysphere.getInvalidCertSSLStatus(uri);
-    var overrideBits = 0;
-
-    // set override bits
-    // FIXME: should this just be for all flags by default?
-    if(SSLStatus.isUntrusted) {
-      monkeysphere.log("flag: ERROR_UNTRUSTED");
-      overrideBits |= monkeysphere.override.ERROR_UNTRUSTED;
-    }
-    if(SSLStatus.isDomainMismatch) {
-      monkeysphere.log("flag: ERROR_MISMATCH");
-      overrideBits |= monkeysphere.override.ERROR_MISMATCH;
-    }
-    if(SSLStatus.isNotValidAtThisTime) {
-      monkeysphere.log("flag: ERROR_TIME");
-      overrideBits |= monkeysphere.override.ERROR_TIME;
-    }
-
-    monkeysphere.log("overrideBits: " + overrideBits);
-
-    monkeysphere.log("set cert override: " + uri.asciiHost + ":" + uri.port);
-    monkeysphere.override.rememberValidityOverride(uri.asciiHost, uri.port,
-                                                   cert,
-                                                   overrideBits,
-                                                   true);
-
-    monkeysphere.log("**** CERT OVERRIDE SET ****");
-  },
-
-  //////////////////////////////////////////////////////////
-  // clear an override
-  clearOverride: function(uri) {
-    monkeysphere.log("clear cert override: " + uri.asciiHost + ":" + uri.port);
-    monkeysphere.override.clearValidityOverride(uri.asciiHost, uri.port);
-  },
-
-////////////////////////////////////////////////////////////
-// CACHE OBJECT
-////////////////////////////////////////////////////////////
-
-  //////////////////////////////////////////////////////////
-  // cache object to store and retrieve data about monkeysphere status for sites
+  // object to store and retrieve data about monkeysphere status for sites
   // uses string of apd as key, and agent response as data
-  cache: (function() {
+  overrides: (function() {
+
+    // response cache object
     var responses = {};
+
     return {
+
+      // set override
       set: function(apd, agentResponse) {
-        monkeysphere.log("set cache:");
+        monkeysphere.log("**** SET OVERRIDE ****");
+
+        var uri = apd.uri;
+        var cert = apd.cert;
+
+        var SSLStatus = monkeysphere.getInvalidCertSSLStatus(uri);
+        var overrideBits = 0;
+
+        // set override bits
+        // FIXME: should this just be for all flags by default?
+        if(SSLStatus.isUntrusted) {
+          monkeysphere.log("flag: ERROR_UNTRUSTED");
+          overrideBits |= monkeysphere.certOverrideService.ERROR_UNTRUSTED;
+        }
+        if(SSLStatus.isDomainMismatch) {
+          monkeysphere.log("flag: ERROR_MISMATCH");
+          overrideBits |= monkeysphere.certOverrideService.ERROR_MISMATCH;
+        }
+        if(SSLStatus.isNotValidAtThisTime) {
+          monkeysphere.log("flag: ERROR_TIME");
+          overrideBits |= monkeysphere.certOverrideService.ERROR_TIME;
+        }
+
+        monkeysphere.log("overrideBits: " + overrideBits);
+
+        monkeysphere.log("set cert override: " + uri.asciiHost + ":" + uri.port);
+        monkeysphere.certOverrideService.rememberValidityOverride(uri.asciiHost, uri.port,
+                                                                  cert,
+                                                                  overrideBits,
+                                                                  true);
+
+        monkeysphere.log("setting cache");
         apd.log();
-        responses[apd.toCacheLabel()] = agentResponse;
+        responses[apd.toOverrideLabel()] = agentResponse;
       },
-      get: function(apd) {
-        return responses[apd.toCacheLabel()];
+
+      // return response object
+      response: function(apd) {
+        return responses[apd.toOverrideLabel()];
       },
+
+      // return override status as bool, true for override set
+      certStatus: function(apd) {
+        var uri = apd.uri;
+        var aHashAlg = {};
+        var aFingerprint = {};
+        var aOverrideBits = {};
+        var aIsTemporary = {};
+        return monkeysphere.certOverrideService.getValidityOverride(uri.asciiHost, uri.port,
+                                                                    aHashAlg,
+                                                                    aFingerprint,
+                                                                    aOverrideBits,
+                                                                    aIsTemporary);
+      },
+
+      // clear override
       clear: function(apd) {
-        monkeysphere.log("clear cache:");
+        monkeysphere.log("**** CLEAR OVERRIDE ****");
+        var uri = apd.uri;
+        monkeysphere.log("clearing cert override");
+        monkeysphere.certOverrideService.clearValidityOverride(uri.asciiHost, uri.port);
+        monkeysphere.log("clearing cache");
         apd.log();
-        delete responses[apd.toCacheLabel()];
+        delete responses[apd.toOverrideLabel()];
       }
     };
   })(),
@@ -540,7 +538,7 @@ var monkeysphere = {
   // securityUI = [xpconnect wrapped (nsISupports, nsISecureBrowserUI, nsISSLStatusProvider)]
   // but i don't think it can be used because it doesn't hold invalid cert info
   // FIXME: is there a better way to get the cert for the actual current connection?
-  getCertificate: function(uri) {
+  getInvalidCert: function(uri) {
     try {
       var cert = monkeysphere.getInvalidCertSSLStatus(uri).QueryInterface(Components.interfaces.nsISSLStatus).serverCert;
       monkeysphere.printCertInfo(cert);
@@ -622,23 +620,32 @@ var monkeysphere = {
 ////////////////////////////////////////////////////////////
 
   contextMenuFunctions: {
+
     clearSite: function() {
-      monkeysphere.log("--- clear site ---");
       var browser = gBrowser.selectedBrowser;
       var uri = browser.currentURI;
-      monkeysphere.clearOverride(uri);
-      monkeysphere.clearStatus(browser);
       try {
-        var apd = monkeysphere.createAgentPostData(browser, browser.securityUI.SSLStatus.serverCert);
-        monkeysphere.cache.clear(apd);
+        var cert = browser.securityUI.SSLStatus.serverCert;
       } catch(e) {
-        monkeysphere.log("no valid cert for site found");
+        monkeysphere.log("no valid cert found?");
+        return;
       }
+      var apd = monkeysphere.createAgentPostData(uri, cert);
+      monkeysphere.overrides.clear(apd);
+      // FIXME: why does the override seem to persist after a clear?
+      if(!monkeysphere.overrides.certStatus(apd)) {
+        alert('Monkeysphere: site clear error.  Is override cert cleared?');
+      }
+      var newstate = browser.monkeysphere.state;
+      var newmessage = browser.monkeysphere.message + ' [NO LONGER CACHED]';
+      monkeysphere.setStatus(browser, newstate, newmessage);
       monkeysphere.updateDisplay();
     },
+
     certs: function() {
       openDialog("chrome://pippki/content/certManager.xul", "Certificate Manager");
     },
+
     help: function() {
       gBrowser.loadOneTab("chrome://monkeysphere/locale/help.html",
       null, null, null, false);
