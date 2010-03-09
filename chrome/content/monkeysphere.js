@@ -36,7 +36,7 @@ var monkeysphere = {
   override: Components.classes["@mozilla.org/security/certoverride;1"].getService(Components.interfaces.nsICertOverrideService),
 
   prefs: Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService).getBranch("extensions.monkeysphere."),
-  
+
 ////////////////////////////////////////////////////////////
 // LOG FUNCTIONS
 ////////////////////////////////////////////////////////////
@@ -80,7 +80,7 @@ var monkeysphere = {
 
     // get localization messages
     monkeysphere.messages = document.getElementById("message_strings");
-    
+
     var envvar = "MONKEYSPHERE_VALIDATION_AGENT_SOCKET";;
     try {
       envvar = monkeysphere.prefs.getCharPref("validation_agent_socket_environment_variable");
@@ -618,19 +618,8 @@ var monkeysphere = {
   },
 
 ////////////////////////////////////////////////////////////
-// FAVICON FUNCTIONS
+// CONTEXT MENU FUNCTIONS
 ////////////////////////////////////////////////////////////
-
-  //////////////////////////////////////////////////////////
-  getFaviconText: function() {
-    return document.getElementById("identity-box").tooltipText;
-  },
-
-  //////////////////////////////////////////////////////////
-  //Sets the tooltip and the text of the favicon popup on https sites
-  setFaviconText: function(str) {
-    document.getElementById("identity-box").tooltipText = str;
-  },
 
   contextMenuFunctions: {
     clearSite: function() {
