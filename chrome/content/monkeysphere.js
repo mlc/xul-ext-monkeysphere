@@ -32,7 +32,7 @@ var monkeysphere = (function() {
   var agent_socket = function() {
     var envvar = "MONKEYSPHERE_VALIDATION_AGENT_SOCKET";;
     try {
-      envvar = monkeysphere.prefs.getCharPref("validation_agent_socket_environment_variable");
+      envvar = prefs.getCharPref("validation_agent_socket_environment_variable");
     } catch (e) {
       log("falling back to built-in environment variable: " + envvar);
     }
@@ -44,7 +44,7 @@ var monkeysphere = (function() {
     if(!ret) {
       ret = "http://localhost:8901";;
       try {
-        ret = monkeysphere.prefs.getCharPref("default_socket");
+        ret = prefs.getCharPref("default_socket");
       } catch (e) {
         log("falling back to built-in default socket location: " + ret);
       }
@@ -96,357 +96,7 @@ var monkeysphere = (function() {
       log("dump: " + key + " = " + obj[key]);
     }
   };
-
-  return {
-
-////////////////////////////////////////////////////////////
-// INITIALIZATION
-////////////////////////////////////////////////////////////
-
-  //////////////////////////////////////////////////////////
-  // initialization function
-  init: function() {
-    log("---- begin initialization ----");
-
-    // get localization messages
-    monkeysphere.messages = document.getElementById("message_strings");
-
-    // create event listeners
-    log("creating listeners...");
-    gBrowser.addProgressListener(monkeysphere.progressListener);
-    gBrowser.addTabsProgressListener(monkeysphere.tabProgressListener);
-
-    log("---- initialization complete ----");
-  },
-
-////////////////////////////////////////////////////////////
-// LISTENERS
-////////////////////////////////////////////////////////////
-
-  // https://developer.mozilla.org/en/nsIWebProgressListener
-  progressListener: {
-    onLocationChange: function(aWebProgress, aRequest, aLocation) {
-      log("++++ PL location change: " + aLocation.prePath);
-      monkeysphere.updateDisplay();
-    },
-
-    onProgressChange: function() {},
-    onSecurityChange: function() {},
-    onStateChange: function(aWebProgress, aRequest, aStateFlags, aStatus) {},
-    onStatusChange: function(aWebProgress, aRequest, aStatus, aMessage) {}
-  },
-
-  // https://developer.mozilla.org/en/Listening_to_events_on_all_tabs
-  tabProgressListener: {
-    onSecurityChange: function(aBrowser, aWebProgress, aRequest, aState) {
-      log("++++ tabPL security change: ");
-      monkeysphere.checkSite(aBrowser, aState);
-    },
-
-    onLocationChange: function(aBrowser, aWebProgress, aRequest, aLocation) {
-      //log("++++ tabPL location change: " + aLocation.prePath);
-    },
-    onProgressChange: function(aBrowser, awebProgress, aRequest, curSelfProgress, maxSelfProgress, curTotalProgress, maxTotalProgress) {
-      //log("++++ tabPL progress change: " + curSelfProgress);
-    },
-    onStateChange: function(aBrowser, aWebProgress, aRequest, aStateFlags, aStatus) {
-      log("++++ tabPL state change: " + aRequest);
-      monkeysphere.updateDisplay();
-    },
-    onStatusChange: function(aBrowser, aWebProgress, aRequest, aStatus, aMessage) {
-      //log("++++ tabPL status change: " + aRequest);
-    }
-  },
-
-////////////////////////////////////////////////////////////
-// SITE URI CHECK FUNCTION
-////////////////////////////////////////////////////////////
-
-  //////////////////////////////////////////////////////////
-  // check uri is relevant to monkeysphere
-  isRelevantURI: function(uri) {
-    ////////////////////////////////////////
-    // check host
-    try {
-      var host = uri.host;
-    } catch(e) {
-      log("host data empty.");
-      return null;
-    }
-
-    ////////////////////////////////////////
-    // check scheme
-    try {
-      var scheme = uri.scheme;
-    } catch(e) {
-      log("scheme data empty.");
-      return null;
-    }
-
-    log("url: " + uri.asciiSpec);
-
-    ////////////////////////////////////////
-    // check if scheme is https
-    if(scheme != "https") {
-      log("scheme not https.");
-      return null;
-    }
-
-    // if uri is relevant for monkeysphere return true
-    return true;
-  },
-
-////////////////////////////////////////////////////////////
-// MAIN SITE CHECK FUNCTION
-////////////////////////////////////////////////////////////
-
-  //////////////////////////////////////////////////////////
-  // check site monkeysphere status
-  checkSite: function(browser, state) {
-    log("check site:");
-
-    var uri = browser.currentURI;
-
-    // if uri not relevant, return
-    if(!monkeysphere.isRelevantURI(uri)) {
-      monkeysphere.setStatus(browser, 'NEUTRAL');
-      return;
-    }
-
-    ////////////////////////////////////////
-    // check browser state
-    log("checking security state: " + state);
-    // if site secure...
-    if(state & Components.interfaces.nsIWebProgressListener.STATE_IS_SECURE) {
-      log("  site state SECURE.");
-
-      // if a monkeysphere-generated cert override is being used by this connection, then we should be setting the status from the override
-      var cert = browser.securityUI.SSLStatus.serverCert;
-      var apd = monkeysphere.createAgentPostData(uri, cert);
-      var response = monkeysphere.overrides.response(apd);
-      if ( typeof response === 'undefined' ) {
-        monkeysphere.setStatus(browser, 'NEUTRAL');
-      } else {
-        monkeysphere.setStatus(browser, 'VALID', response.message);
-      }
-      return;
-
-    // if site insecure continue
-    } else if(state & Components.interfaces.nsIWebProgressListener.STATE_IS_INSECURE) {
-      log("  site state INSECURE");
-
-    // else if unknown state continue
-    } else {
-      log("  site state is unknown");
-    }
-
-    ////////////////////////////////////////
-    // get site certificate
-    log("retrieving site certificate:");
-    var cert = monkeysphere.getInvalidCert(uri);
-
-    ////////////////////////////////////////
-    // finally go ahead and query the agent
-    log("querying agent...");
-    monkeysphere.queryAgent(browser, cert);
-  },
-
-  //////////////////////////////////////////////////////////
-  // set site monkeysphere status
-  setStatus: function(browser, state, message) {
-    if ( typeof message === 'undefined' ) {
-      var key = "status" + state;
-      message = monkeysphere.messages.getString(key);
-    }
-    log("set browser status: " + state + ', ' + message);
-    browser.monkeysphere = { state: state, message: message };
-  },
-
-  //////////////////////////////////////////////////////////
-  // clear site monkeysphere status for browser
-  clearStatus: function(browser) {
-    log("clear browser status");
-    delete browser.monkeysphere;
-  },
-
-////////////////////////////////////////////////////////////
-// UPDATE DISPLAY
-////////////////////////////////////////////////////////////
-
-  //////////////////////////////////////////////////////////
-  // update the display for the currently visible browser
-  updateDisplay: function() {
-    log("update display:");
-
-    var browser = gBrowser.selectedBrowser;
-    var panel = document.getElementById("monkeysphere-status");
-    var icon = document.getElementById("monkeysphere-status-image");
-
-    // the following happens when called from a dialog
-    if(!panel || !icon) {
-      log("  panel/icon not available; falling back to window.opener");
-      panel = window.opener.document.getElementById("monkeysphere-status");
-      icon = window.opener.document.getElementById("monkeysphere-status-image");
-    }
-
-    // set state neutral by default
-    var state = 'NEUTRAL';
-    var message = "";
-
-    // set from the browser monkeysphere state object if available
-    if( typeof browser.monkeysphere !== "undefined" ) {
-      state = browser.monkeysphere.state;
-      message = browser.monkeysphere.message;
-    }
-
-    log("  state: " + state);
-    switch(state){
-      case 'INPROGRESS':
-        icon.setAttribute("src", "chrome://monkeysphere/content/progress.gif");
-        panel.hidden = false;
-        break;
-      case 'VALID':
-        icon.setAttribute("src", "chrome://monkeysphere/content/good.png");
-        panel.hidden = false;
-        break;
-      case 'NOTVALID':
-        icon.setAttribute("src", "chrome://monkeysphere/content/bad.png");
-        panel.hidden = false;
-        break;
-      case 'NEUTRAL':
-        icon.setAttribute("src", "");
-        panel.hidden = true;
-        break;
-      case 'ERROR':
-        icon.setAttribute("src", "chrome://monkeysphere/content/error.png");
-        panel.hidden = false;
-        break;
-    }
-
-    log("  message: " + message);
-    panel.setAttribute("tooltiptext", message);
-  },
-
-////////////////////////////////////////////////////////////
-// AGENT QUERY FUNCTIONS
-////////////////////////////////////////////////////////////
-
-  createAgentPostData: function(uri, cert) {
-    // get certificate info
-    var cert_length = {};
-    var dummy = {};
-    var cert_data = cert.getRawDER(cert_length, dummy);
-
-    // "agent post data"
-    var apd = {
-      uri: uri,
-      cert: cert,
-      data: {
-        context: uri.scheme,
-        peer: uri.hostPort,
-        pkc: {
-          type: "x509der",
-          data: cert_data
-        }
-      },
-      toJSON: function() {
-        return JSON.stringify(this.data);
-      },
-      toOverrideLabel: function() {
-        return this.data.context + '|' + this.data.peer + '|' + this.data.pkc.type + '|' + this.data.pkc.data;
-      },
-      log: function() {
-        log("agent post data:");
-        log("  context: " + this.data.context);
-        log("  peer: " + this.data.peer);
-        log("  pkc.type: " + this.data.pkc.type);
-        //log("  pkc.data: " + this.data.pkc.data); // this can be big
-        //log("  JSON: " + this.toJSON());
-      }
-    };
-
-    return apd;
-  },
-
-  //////////////////////////////////////////////////////////
-  // query the validation agent
-  queryAgent: function(browser, cert) {
-    log("#### querying validation agent ####");
-    var socket = agent_socket();
-
-    var uri = browser.currentURI;
-
-    // make the client request object
-    var client = new XMLHttpRequest();
-
-    // make JSON query string
-    client.apd = monkeysphere.createAgentPostData(uri, cert);
-    client.apd.log();
-    var query = client.apd.toJSON();
-
-    var request_url = socket + "/reviewcert";
-    log("creating http request to " + request_url);
-    client.open("POST", request_url, true);
-
-    // set headers
-    client.setRequestHeader("Content-Type", "application/json");
-    client.setRequestHeader("Content-Length", query.length);
-    client.setRequestHeader("Connection", "close");
-    client.setRequestHeader("Accept", "application/json");
-
-    // setup the state change function
-    client.onreadystatechange = function() {
-      monkeysphere.onAgentStateChange(client, browser, cert);
-    };
-
-    log("sending query...");
-    client.send(query);
-    log("query sent");
-    monkeysphere.setStatus(browser, 'INPROGRESS');
-  },
-
-  //////////////////////////////////////////////////////////
-  // when the XMLHttpRequest to the agent state changes
-  onAgentStateChange: function(client, browser, cert) {
-    log("agent query state change: " + client.readyState);
-    log("  status: " + client.status);
-    log("  response: " + client.responseText);
-
-    if (client.readyState == 4) {
-      if (client.status == 200) {
-
-        var response = JSON.parse(client.responseText);
-
-        if (response.valid) {
-
-          // VALID!
-          log("SITE VERIFIED!");
-          monkeysphere.overrides.set(client.apd, response);
-          monkeysphere.setStatus(browser, 'VALID', response.message);
-
-          // reload page
-          log("reloading browser...");
-          browser.webNavigation.reload(nsIWebNavigation.LOAD_FLAGS_NONE);
-
-        } else {
-
-          // NOT VALID
-          log("site not verified.");
-          monkeysphere.setStatus(browser, 'NOTVALID', response.message);
-
-        }
-      } else {
-        log("validation agent did not respond.");
-        //alert(monkeysphere.messages.getString("agentError"));
-        monkeysphere.setStatus(browser, 'ERROR', monkeysphere.messages.getString('noResponseFromAgent'));
-      }
-
-      // update the current display, so that if we're looking at the
-      // browser being processed, the result will be immediately displayed
-      monkeysphere.updateDisplay();
-    }
-  },
-
+                      
 ////////////////////////////////////////////////////////////
 // OVERRIDE CACHE OBJECT
 ////////////////////////////////////////////////////////////
@@ -454,7 +104,7 @@ var monkeysphere = (function() {
   //////////////////////////////////////////////////////////
   // object to store and retrieve data about monkeysphere status for sites
   // uses string of apd as key, and agent response as data
-  overrides: (function() {
+  var overrides = (function() {
 
     // response cache object
     var responses = {};
@@ -468,7 +118,7 @@ var monkeysphere = (function() {
         var uri = apd.uri;
         var cert = apd.cert;
 
-        var SSLStatus = monkeysphere.getInvalidCertSSLStatus(uri);
+        var SSLStatus = getInvalidCertSSLStatus(uri);
         var overrideBits = 0;
 
         // set override bits
@@ -529,7 +179,197 @@ var monkeysphere = (function() {
         delete responses[apd.toOverrideLabel()];
       }
     };
-  })(),
+    })();
+
+////////////////////////////////////////////////////////////
+// SITE URI CHECK FUNCTION
+////////////////////////////////////////////////////////////
+
+  //////////////////////////////////////////////////////////
+  // check uri is relevant to monkeysphere
+  isRelevantURI = function(uri) {
+    ////////////////////////////////////////
+    // check host
+    try {
+      var host = uri.host;
+    } catch(e) {
+      log("host data empty.");
+      return null;
+    }
+
+    ////////////////////////////////////////
+    // check scheme
+    try {
+      var scheme = uri.scheme;
+    } catch(e) {
+      log("scheme data empty.");
+      return null;
+    }
+
+    log("url: " + uri.asciiSpec);
+
+    ////////////////////////////////////////
+    // check if scheme is https
+    if(scheme != "https") {
+      log("scheme not https.");
+      return null;
+    }
+
+    // if uri is relevant for monkeysphere return true
+    return true;
+  };
+
+////////////////////////////////////////////////////////////
+// MAIN SITE CHECK FUNCTION
+////////////////////////////////////////////////////////////
+
+  //////////////////////////////////////////////////////////
+  // check site monkeysphere status
+  checkSite = function(browser, state) {
+    log("check site:");
+
+    var uri = browser.currentURI;
+
+    // if uri not relevant, return
+    if(!isRelevantURI(uri)) {
+      setStatus(browser, 'NEUTRAL');
+      return;
+    }
+
+    ////////////////////////////////////////
+    // check browser state
+    log("checking security state: " + state);
+    // if site secure...
+    if(state & Components.interfaces.nsIWebProgressListener.STATE_IS_SECURE) {
+      log("  site state SECURE.");
+
+      // if a monkeysphere-generated cert override is being used by this connection, then we should be setting the status from the override
+      var cert = browser.securityUI.SSLStatus.serverCert;
+      var apd = createAgentPostData(uri, cert);
+      var response = overrides.response(apd);
+      if ( typeof response === 'undefined' ) {
+        setStatus(browser, 'NEUTRAL');
+      } else {
+        setStatus(browser, 'VALID', response.message);
+      }
+      return;
+
+    // if site insecure continue
+    } else if(state & Components.interfaces.nsIWebProgressListener.STATE_IS_INSECURE) {
+      log("  site state INSECURE");
+
+    // else if unknown state continue
+    } else {
+      log("  site state is unknown");
+    }
+
+    ////////////////////////////////////////
+    // get site certificate
+    log("retrieving site certificate:");
+    var cert = getInvalidCert(uri);
+
+    ////////////////////////////////////////
+    // finally go ahead and query the agent
+    log("querying agent...");
+    queryAgent(browser, cert);
+  };
+
+  //////////////////////////////////////////////////////////
+  // set site monkeysphere status
+  setStatus = function(browser, state, message) {
+    if ( typeof message === 'undefined' ) {
+      var key = "status" + state;
+      message = monkeysphere.messages.getString(key);
+    }
+    log("set browser status: " + state + ', ' + message);
+    browser.monkeysphere = { state: state, message: message };
+  };
+
+  //////////////////////////////////////////////////////////
+  // clear site monkeysphere status for browser
+  clearStatus = function(browser) {
+    log("clear browser status");
+    delete browser.monkeysphere;
+  };
+
+                      
+////////////////////////////////////////////////////////////
+// AGENT QUERY FUNCTIONS
+////////////////////////////////////////////////////////////
+
+  createAgentPostData = function(uri, cert) {
+    // get certificate info
+    var cert_length = {};
+    var dummy = {};
+    var cert_data = cert.getRawDER(cert_length, dummy);
+
+    // "agent post data"
+    var apd = {
+      uri: uri,
+      cert: cert,
+      data: {
+        context: uri.scheme,
+        peer: uri.hostPort,
+        pkc: {
+          type: "x509der",
+          data: cert_data
+        }
+      },
+      toJSON: function() {
+        return JSON.stringify(this.data);
+      },
+      toOverrideLabel: function() {
+        return this.data.context + '|' + this.data.peer + '|' + this.data.pkc.type + '|' + this.data.pkc.data;
+      },
+      log: function() {
+        log("agent post data:");
+        log("  context: " + this.data.context);
+        log("  peer: " + this.data.peer);
+        log("  pkc.type: " + this.data.pkc.type);
+        //log("  pkc.data: " + this.data.pkc.data); // this can be big
+        //log("  JSON: " + this.toJSON());
+      }
+    };
+
+    return apd;
+  };
+
+  //////////////////////////////////////////////////////////
+  // query the validation agent
+  queryAgent = function(browser, cert) {
+    log("#### querying validation agent ####");
+    var socket = agent_socket();
+
+    var uri = browser.currentURI;
+
+    // make the client request object
+    var client = new XMLHttpRequest();
+
+    // make JSON query string
+    client.apd = createAgentPostData(uri, cert);
+    client.apd.log();
+    var query = client.apd.toJSON();
+
+    var request_url = socket + "/reviewcert";
+    log("creating http request to " + request_url);
+    client.open("POST", request_url, true);
+
+    // set headers
+    client.setRequestHeader("Content-Type", "application/json");
+    client.setRequestHeader("Content-Length", query.length);
+    client.setRequestHeader("Connection", "close");
+    client.setRequestHeader("Accept", "application/json");
+
+    // setup the state change function
+    client.onreadystatechange = function() {
+      monkeysphere.onAgentStateChange(client, browser, cert);
+    };
+
+    log("sending query...");
+    client.send(query);
+    log("query sent");
+    setStatus(browser, 'INPROGRESS');
+  };
 
 ////////////////////////////////////////////////////////////
 // CERT FUNCTIONS
@@ -540,20 +380,20 @@ var monkeysphere = (function() {
   // securityUI = [xpconnect wrapped (nsISupports, nsISecureBrowserUI, nsISSLStatusProvider)]
   // but i don't think it can be used because it doesn't hold invalid cert info
   // FIXME: is there a better way to get the cert for the actual current connection?
-  getInvalidCert: function(uri) {
+  getInvalidCert = function(uri) {
     try {
-      var cert = monkeysphere.getInvalidCertSSLStatus(uri).QueryInterface(Components.interfaces.nsISSLStatus).serverCert;
-      monkeysphere.printCertInfo(cert);
+      var cert = getInvalidCertSSLStatus(uri).QueryInterface(Components.interfaces.nsISSLStatus).serverCert;
+      printCertInfo(cert);
       return cert;
     } catch(e) {
       return null;
     }
-  },
+  };
 
   //////////////////////////////////////////////////////////
   // gets current ssl status info
   // http://www.oxymoronical.com/experiments/apidocs/interface/nsIRecentBadCertsService
-  getInvalidCertSSLStatus: function(uri) {
+  getInvalidCertSSLStatus = function(uri) {
     var recentCertsService =
       Components.classes["@mozilla.org/security/recentbadcerts;1"].getService(Components.interfaces.nsIRecentBadCertsService);
     if (!recentCertsService)
@@ -569,12 +409,12 @@ var monkeysphere = (function() {
       return null;
 
     return SSLStatus;
-  },
+  };
 
   //////////////////////////////////////////////////////////
   // Print SSL certificate details
   // https://developer.mozilla.org/En/How_to_check_the_security_state_of_an_XMLHTTPRequest_over_SSL
-  printCertInfo: function(cert) {
+  printCertInfo = function(cert) {
     const Ci = Components.interfaces;
 
     log("certificate:");
@@ -615,6 +455,173 @@ var monkeysphere = (function() {
     var validity = cert.validity.QueryInterface(Ci.nsIX509CertValidity);
     log("\tValid from: " + validity.notBeforeGMT);
     log("\tValid until: " + validity.notAfterGMT);
+  };
+
+                      
+////////////////////////////////////////////////////////////
+// UPDATE DISPLAY
+////////////////////////////////////////////////////////////
+
+  //////////////////////////////////////////////////////////
+  // update the display for the currently visible browser
+  updateDisplay = function() {
+    log("update display:");
+
+    var browser = gBrowser.selectedBrowser;
+    var panel = document.getElementById("monkeysphere-status");
+    var icon = document.getElementById("monkeysphere-status-image");
+
+    // the following happens when called from a dialog
+    if(!panel || !icon) {
+      log("  panel/icon not available; falling back to window.opener");
+      panel = window.opener.document.getElementById("monkeysphere-status");
+      icon = window.opener.document.getElementById("monkeysphere-status-image");
+    }
+
+    // set state neutral by default
+    var state = 'NEUTRAL';
+    var message = "";
+
+    // set from the browser monkeysphere state object if available
+    if( typeof browser.monkeysphere !== "undefined" ) {
+      state = browser.monkeysphere.state;
+      message = browser.monkeysphere.message;
+    }
+
+    log("  state: " + state);
+    switch(state){
+      case 'INPROGRESS':
+        icon.setAttribute("src", "chrome://monkeysphere/content/progress.gif");
+        panel.hidden = false;
+        break;
+      case 'VALID':
+        icon.setAttribute("src", "chrome://monkeysphere/content/good.png");
+        panel.hidden = false;
+        break;
+      case 'NOTVALID':
+        icon.setAttribute("src", "chrome://monkeysphere/content/bad.png");
+        panel.hidden = false;
+        break;
+      case 'NEUTRAL':
+        icon.setAttribute("src", "");
+        panel.hidden = true;
+        break;
+      case 'ERROR':
+        icon.setAttribute("src", "chrome://monkeysphere/content/error.png");
+        panel.hidden = false;
+        break;
+    }
+
+    log("  message: " + message);
+    panel.setAttribute("tooltiptext", message);
+  };
+                      
+                      
+////////////////////////////////////////////////////////////
+// EXTERNAL INTERFACE
+////////////////////////////////////////////////////////////
+
+  return {
+
+////////////////////////////////////////////////////////////
+// INITIALIZATION
+////////////////////////////////////////////////////////////
+
+  //////////////////////////////////////////////////////////
+  // initialization function
+  init: function() {
+    log("---- begin initialization ----");
+
+    // get localization messages
+    monkeysphere.messages = document.getElementById("message_strings");
+
+    // create event listeners
+    log("creating listeners...");
+    gBrowser.addProgressListener(monkeysphere.progressListener);
+    gBrowser.addTabsProgressListener(monkeysphere.tabProgressListener);
+
+    log("---- initialization complete ----");
+  },
+
+////////////////////////////////////////////////////////////
+// LISTENERS
+////////////////////////////////////////////////////////////
+
+  // https://developer.mozilla.org/en/nsIWebProgressListener
+  progressListener: {
+    onLocationChange: function(aWebProgress, aRequest, aLocation) {
+      log("++++ PL location change: " + aLocation.prePath);
+      updateDisplay();
+    },
+
+    onProgressChange: function() {},
+    onSecurityChange: function() {},
+    onStateChange: function(aWebProgress, aRequest, aStateFlags, aStatus) {},
+    onStatusChange: function(aWebProgress, aRequest, aStatus, aMessage) {}
+  },
+
+  // https://developer.mozilla.org/en/Listening_to_events_on_all_tabs
+  tabProgressListener: {
+    onSecurityChange: function(aBrowser, aWebProgress, aRequest, aState) {
+      log("++++ tabPL security change: ");
+      checkSite(aBrowser, aState);
+    },
+
+    onLocationChange: function(aBrowser, aWebProgress, aRequest, aLocation) {
+      //log("++++ tabPL location change: " + aLocation.prePath);
+    },
+    onProgressChange: function(aBrowser, awebProgress, aRequest, curSelfProgress, maxSelfProgress, curTotalProgress, maxTotalProgress) {
+      //log("++++ tabPL progress change: " + curSelfProgress);
+    },
+    onStateChange: function(aBrowser, aWebProgress, aRequest, aStateFlags, aStatus) {
+      log("++++ tabPL state change: " + aRequest);
+      updateDisplay();
+    },
+    onStatusChange: function(aBrowser, aWebProgress, aRequest, aStatus, aMessage) {
+      //log("++++ tabPL status change: " + aRequest);
+    }
+  },
+
+  //////////////////////////////////////////////////////////
+  // when the XMLHttpRequest to the agent state changes
+  onAgentStateChange: function(client, browser, cert) {
+    log("agent query state change: " + client.readyState);
+    log("  status: " + client.status);
+    log("  response: " + client.responseText);
+
+    if (client.readyState == 4) {
+      if (client.status == 200) {
+
+        var response = JSON.parse(client.responseText);
+
+        if (response.valid) {
+
+          // VALID!
+          log("SITE VERIFIED!");
+          overrides.set(client.apd, response);
+          setStatus(browser, 'VALID', response.message);
+
+          // reload page
+          log("reloading browser...");
+          browser.webNavigation.reload(nsIWebNavigation.LOAD_FLAGS_NONE);
+
+        } else {
+
+          // NOT VALID
+          log("site not verified.");
+          setStatus(browser, 'NOTVALID', response.message);
+
+        }
+      } else {
+        log("validation agent did not respond.");
+        //alert(monkeysphere.messages.getString("agentError"));
+        setStatus(browser, 'ERROR', monkeysphere.messages.getString('noResponseFromAgent'));
+      }
+
+      // update the current display, so that if we're looking at the
+      // browser being processed, the result will be immediately displayed
+      updateDisplay();
+    }
   },
 
 ////////////////////////////////////////////////////////////
@@ -632,16 +639,16 @@ var monkeysphere = (function() {
         log("no valid cert found?");
         return;
       }
-      var apd = monkeysphere.createAgentPostData(uri, cert);
-      monkeysphere.overrides.clear(apd);
+      var apd = createAgentPostData(uri, cert);
+      overrides.clear(apd);
       // FIXME: why does the override seem to persist after a clear?
-      if(!monkeysphere.overrides.certStatus(apd)) {
+      if(!overrides.certStatus(apd)) {
         alert('Monkeysphere: site clear error.  Is override cert cleared?');
       }
       var newstate = browser.monkeysphere.state;
       var newmessage = browser.monkeysphere.message + ' [NO LONGER CACHED]';
-      monkeysphere.setStatus(browser, newstate, newmessage);
-      monkeysphere.updateDisplay();
+      setStatus(browser, newstate, newmessage);
+      updateDisplay();
     },
 
     certs: function() {
@@ -654,4 +661,4 @@ var monkeysphere = (function() {
     }
   }
 };
-                    })();
+})();
