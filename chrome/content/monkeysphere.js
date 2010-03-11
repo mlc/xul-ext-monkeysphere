@@ -27,9 +27,36 @@ var monkeysphere = {
   // VALID      : processed and validated
   // NOTVALID   : processed and not validated
 
-  // agent URL from environment variable
+  // select agent URL from environment variable or explicitly-set preference.
   // "http://localhost:8901" <-- NO TRAILING SLASH
-  agent_socket: [],
+  agent_socket: function() {
+    var envvar = "MONKEYSPHERE_VALIDATION_AGENT_SOCKET";;
+    try {
+      envvar = monkeysphere.prefs.getCharPref("validation_agent_socket_environment_variable");
+    } catch (e) {
+      monkeysphere.log("falling back to built-in environment variable: " + envvar);
+    }
+    monkeysphere.log("using environment variable " + envvar);
+    // get the agent URL from the environment
+    // https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIEnvironment
+    var agent_socket = Components.classes["@mozilla.org/process/environment;1"].getService(Components.interfaces.nsIEnvironment).get(envvar);
+    // return error if agent URL not set
+    if(!agent_socket) {
+      agent_socket = "http://localhost:8901";;
+      try {
+        agent_socket = monkeysphere.prefs.getCharPref("default_socket");
+      } catch (e) {
+        monkeysphere.log("falling back to built-in default socket location: " + agent_socket);
+      }
+
+      monkeysphere.log(envvar + " environment variable not set.  Using default of " + agent_socket);
+    }
+    // replace trailing slashes
+    agent_socket = agent_socket.replace(/\/*$/, '');
+    monkeysphere.log("agent socket: " + agent_socket);
+    
+    return agent_socket;
+  },
 
   // certificate override service class
   // http://www.oxymoronical.com/experiments/xpcomref/applications/Firefox/3.5/interfaces/nsICertOverrideService
@@ -81,32 +108,6 @@ var monkeysphere = {
 
     // get localization messages
     monkeysphere.messages = document.getElementById("message_strings");
-
-    var envvar = "MONKEYSPHERE_VALIDATION_AGENT_SOCKET";;
-    try {
-      envvar = monkeysphere.prefs.getCharPref("validation_agent_socket_environment_variable");
-    } catch (e) {
-      monkeysphere.log("falling back to built-in environment variable: " + envvar);
-    }
-    monkeysphere.log("using environment variable " + envvar);
-    // get the agent URL from the environment
-    // https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIEnvironment
-    monkeysphere.agent_socket = Components.classes["@mozilla.org/process/environment;1"].getService(Components.interfaces.nsIEnvironment).get(envvar);
-    // return error if agent URL not set
-    if(!monkeysphere.agent_socket) {
-      var default_socket = "http://localhost:8901";;
-      try {
-        default_socket = monkeysphere.prefs.getCharPref("default_socket");
-      } catch (e) {
-        monkeysphere.log("falling back to built-in default socket location: " + default_socket);
-      }
-
-      monkeysphere.log(envvar + " environment variable not set.  Using default of " + default_socket);
-      monkeysphere.agent_socket = default_socket;
-    }
-    // replace trailing slashes
-    monkeysphere.agent_socket = monkeysphere.agent_socket.replace(/\/*$/, '');
-    monkeysphere.log("agent socket: " + monkeysphere.agent_socket);
 
     // create event listeners
     monkeysphere.log("creating listeners...");
@@ -369,8 +370,7 @@ var monkeysphere = {
   // query the validation agent
   queryAgent: function(browser, cert) {
     monkeysphere.log("#### querying validation agent ####");
-
-    monkeysphere.log("agent_socket: " + monkeysphere.agent_socket);
+    var socket = monkeysphere.agent_socket();
 
     var uri = browser.currentURI;
 
@@ -382,7 +382,7 @@ var monkeysphere = {
     client.apd.log();
     var query = client.apd.toJSON();
 
-    var request_url = monkeysphere.agent_socket + "/reviewcert";
+    var request_url = socket + "/reviewcert";
     monkeysphere.log("creating http request to " + request_url);
     client.open("POST", request_url, true);
 
