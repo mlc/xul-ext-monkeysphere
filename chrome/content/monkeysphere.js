@@ -187,7 +187,7 @@ var monkeysphere = (function() {
 
   //////////////////////////////////////////////////////////
   // check uri is relevant to monkeysphere
-  isRelevantURI = function(uri) {
+  var isRelevantURI = function(uri) {
     ////////////////////////////////////////
     // check host
     try {
@@ -225,7 +225,7 @@ var monkeysphere = (function() {
 
   //////////////////////////////////////////////////////////
   // check site monkeysphere status
-  checkSite = function(browser, state) {
+  var checkSite = function(browser, state) {
     log("check site:");
 
     var uri = browser.currentURI;
@@ -276,7 +276,7 @@ var monkeysphere = (function() {
 
   //////////////////////////////////////////////////////////
   // set site monkeysphere status
-  setStatus = function(browser, state, message) {
+  var setStatus = function(browser, state, message) {
     if ( typeof message === 'undefined' ) {
       var key = "status" + state;
       message = monkeysphere.messages.getString(key);
@@ -287,7 +287,7 @@ var monkeysphere = (function() {
 
   //////////////////////////////////////////////////////////
   // clear site monkeysphere status for browser
-  clearStatus = function(browser) {
+  var clearStatus = function(browser) {
     log("clear browser status");
     delete browser.monkeysphere;
   };
@@ -297,7 +297,7 @@ var monkeysphere = (function() {
 // AGENT QUERY FUNCTIONS
 ////////////////////////////////////////////////////////////
 
-  createAgentPostData = function(uri, cert) {
+  var createAgentPostData = function(uri, cert) {
     // get certificate info
     var cert_length = {};
     var dummy = {};
@@ -336,7 +336,7 @@ var monkeysphere = (function() {
 
   //////////////////////////////////////////////////////////
   // query the validation agent
-  queryAgent = function(browser, cert) {
+  var queryAgent = function(browser, cert) {
     log("#### querying validation agent ####");
     var socket = agent_socket();
 
@@ -380,7 +380,7 @@ var monkeysphere = (function() {
   // securityUI = [xpconnect wrapped (nsISupports, nsISecureBrowserUI, nsISSLStatusProvider)]
   // but i don't think it can be used because it doesn't hold invalid cert info
   // FIXME: is there a better way to get the cert for the actual current connection?
-  getInvalidCert = function(uri) {
+  var getInvalidCert = function(uri) {
     try {
       var cert = getInvalidCertSSLStatus(uri).QueryInterface(Components.interfaces.nsISSLStatus).serverCert;
       printCertInfo(cert);
@@ -393,7 +393,7 @@ var monkeysphere = (function() {
   //////////////////////////////////////////////////////////
   // gets current ssl status info
   // http://www.oxymoronical.com/experiments/apidocs/interface/nsIRecentBadCertsService
-  getInvalidCertSSLStatus = function(uri) {
+  var getInvalidCertSSLStatus = function(uri) {
     var recentCertsService =
       Components.classes["@mozilla.org/security/recentbadcerts;1"].getService(Components.interfaces.nsIRecentBadCertsService);
     if (!recentCertsService)
@@ -414,7 +414,7 @@ var monkeysphere = (function() {
   //////////////////////////////////////////////////////////
   // Print SSL certificate details
   // https://developer.mozilla.org/En/How_to_check_the_security_state_of_an_XMLHTTPRequest_over_SSL
-  printCertInfo = function(cert) {
+  var printCertInfo = function(cert) {
     const Ci = Components.interfaces;
 
     log("certificate:");
@@ -464,7 +464,7 @@ var monkeysphere = (function() {
 
   //////////////////////////////////////////////////////////
   // update the display for the currently visible browser
-  updateDisplay = function() {
+  var updateDisplay = function() {
     log("update display:");
 
     var browser = gBrowser.selectedBrowser;
