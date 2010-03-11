@@ -54,14 +54,14 @@ var monkeysphere = (function() {
     // replace trailing slashes
     ret = ret.replace(/\/*$/, '');
     log("agent socket: " + ret);
-      
+
     return ret;
   };
-  
+
   // certificate override service class
   // http://www.oxymoronical.com/experiments/xpcomref/applications/Firefox/3.5/interfaces/nsICertOverrideService
   var certOverrideService = Components.classes["@mozilla.org/security/certoverride;1"].getService(Components.interfaces.nsICertOverrideService);
-                      
+
   // preferences in about:config
   var prefs = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService).getBranch("extensions.monkeysphere.");
 
@@ -96,7 +96,7 @@ var monkeysphere = (function() {
       log("dump: " + key + " = " + obj[key]);
     }
   };
-                      
+
 ////////////////////////////////////////////////////////////
 // OVERRIDE CACHE OBJECT
 ////////////////////////////////////////////////////////////
@@ -292,7 +292,7 @@ var monkeysphere = (function() {
     delete browser.monkeysphere;
   };
 
-                      
+
 ////////////////////////////////////////////////////////////
 // AGENT QUERY FUNCTIONS
 ////////////////////////////////////////////////////////////
@@ -457,7 +457,7 @@ var monkeysphere = (function() {
     log("\tValid until: " + validity.notAfterGMT);
   };
 
-                      
+
 ////////////////////////////////////////////////////////////
 // UPDATE DISPLAY
 ////////////////////////////////////////////////////////////
@@ -515,8 +515,8 @@ var monkeysphere = (function() {
     log("  message: " + message);
     panel.setAttribute("tooltiptext", message);
   };
-                      
-                      
+
+
 ////////////////////////////////////////////////////////////
 // EXTERNAL INTERFACE
 ////////////////////////////////////////////////////////////
@@ -565,6 +565,7 @@ var monkeysphere = (function() {
     onSecurityChange: function(aBrowser, aWebProgress, aRequest, aState) {
       log("++++ tabPL security change: ");
       checkSite(aBrowser, aState);
+      updateDisplay();
     },
 
     onLocationChange: function(aBrowser, aWebProgress, aRequest, aLocation) {
