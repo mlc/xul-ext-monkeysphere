@@ -3,4 +3,4 @@
 	dh --with xul-ext $@
 
 override_dh_auto_install:
-	install-xpi -x COPYING -x defaults/preferences/monkeysphere.js monkeysphere.xpi
+	install-xpi -x COPYING monkeysphere.xpi
