@@ -20,4 +20,4 @@ Description: Iceweasel/Firefox extension for using Monkeysphere on the web
  for rsa keys.
  .
  This extensions enables Monkeysphere checking of X.509 certificates
- from https hosts whos keys are in the web of trust.
+ from https hosts whose keys are in the web of trust.
