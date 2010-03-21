@@ -1,8 +1,0 @@
-- bind "monkeysphere info" to temporary cert override (needed for status bar)
-- need event listener that will trigger for events in backgrounded windows/tabs
-- initialization check that agent is running
-- give "monkeysphere" info in:
-  - favicon
-  - cert validity in certificate view dialog for site
-- status menu item clear temporary cert override for site
-- status menu item to view site cert

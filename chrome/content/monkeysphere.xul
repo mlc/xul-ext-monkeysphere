@@ -30,13 +30,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
   <script type="application/x-javascript" src="monkeysphere.js" />
 
   <script type="text/javascript">
-    window.addEventListener('load', monkeysphere.init, false);
+    <!--
+    https://developer.mozilla.org/en/DOM/element.addEventListener
+    see "Memory issues" section
+    -->
+    window.addEventListener('load', function() { monkeysphere.init(); }, false);
   </script>
 
   <statusbar id="status-bar">
 
     <statusbarpanel id="monkeysphere-status"
-      		    tooltiptext="Monkeysphere">
+                    tooltiptext="Monkeysphere"
+                    hidden="true">
       <image id="monkeysphere-status-image"
 	     src="chrome://monkeysphere/content/default.png"
 	     style="width:16px; height:16px;" 
@@ -45,10 +50,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
     <popupset>
       <popup id="monkeysphere-contextmenu" position="after_start">
-	<menuitem label="View Certificate Store"
-		  oncommand="monkeysphere.contextmenufunctions.certs()" />
+        <!-- FIXME: need locales stuff for these labels -->
+        <menuitem label="Clear site Monkeysphere exception"
+		  oncommand="monkeysphere.contextMenuFunctions.clearSite()" />
 	<menuitem label="Help"
-		  oncommand="monkeysphere.contextmenufunctions.help()" />
+		  oncommand="monkeysphere.contextMenuFunctions.help()" />
       </popup>
     </popupset>
  

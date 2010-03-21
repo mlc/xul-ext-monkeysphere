@@ -1,11 +1,6 @@
 #!/usr/bin/make -f
+%:
+	dh --with xul-ext $@
 
-include /usr/share/cdbs/1/rules/debhelper.mk
-include /usr/share/mozilla-devscripts/xpi.mk
-
-install/xul-ext-monkeysphere::
-	rm -f $(CURDIR)/debian/xul-ext-monkeysphere/usr/share/xul-ext-monkeysphere/Makefile
-	rm -f $(CURDIR)/debian/xul-ext-monkeysphere/usr/share/xul-ext-monkeysphere/TODO
-	rm -f $(CURDIR)/debian/xul-ext-monkeysphere/usr/share/xul-ext-monkeysphere/NOTES
-
-
+override_dh_auto_install:
+	install-xpi -x COPYING -x defaults/preferences/monkeysphere.js monkeysphere.xpi
