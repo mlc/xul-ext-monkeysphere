@@ -11,7 +11,7 @@ monkeysphere.xpi: $(XPI_CONTENTS)
 	zip $@ $(XPI_CONTENTS)
 
 debian-package:
-	git buildpackage -uc -us --git-upstream-branch=master --git-debian-branch=debian --git-no-pristine-tar -i'^\.git'
+	git buildpackage -uc -us --git-no-pristine-tar
 
 clean:
 	rm -f monkeysphere.xpi
