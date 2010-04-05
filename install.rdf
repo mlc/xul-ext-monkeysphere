@@ -38,8 +38,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     <em:targetApplication>   
       <Description>
 	<em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
-	<em:minVersion>3.5.4</em:minVersion>
-	<em:maxVersion>3.5.*</em:maxVersion>
+	<em:minVersion>3.5</em:minVersion>
+	<em:maxVersion>3.6.*</em:maxVersion>
       </Description>
     </em:targetApplication>
 
