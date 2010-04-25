@@ -1,14 +1,5 @@
 xul-ext-monkeysphere (0.1~pre-1) UNRELEASED; urgency=low
 
-  [ Micah Anderson ]
-  * Removed unnecessary installation of TODO, NOTES and Makefile
-    from extension directory
+  * New upstream initial release to Debian (Closes: #579177)
 
-  [ Daniel Kahn Gillmor ]
-  * removed build-dependency on cdbs
-  
-  [ Jameson Rollins ]
-  * New upstream initial release to Debian
-
- -- Daniel Kahn Gillmor <dkg@fifthhorseman.net>  Tue, 09 Mar 2010 13:24:35 -0500
-
+ -- Jameson Rollins <jrollins@finestructure.net>  Sun, 25 Apr 2010 18:53:52 -0400
