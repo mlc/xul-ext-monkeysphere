@@ -87,8 +87,7 @@ var monkeysphere = (function() {
   // set site monkeysphere status
   var setStatus = function(browser, state, message) {
     if ( typeof message === 'undefined' ) {
-      var key = "status" + state;
-      message = monkeysphere.messages.getString(key);
+      message = '';
     }
     ms.log("set browser status: " + state + ', ' + message);
     browser.monkeysphere = { state: state, message: message };
@@ -140,7 +139,7 @@ var monkeysphere = (function() {
     ms.log("sending query...");
     client.send(query);
     ms.log("query sent");
-    setStatus(browser, 'INPROGRESS');
+    setStatus(browser, 'INPROGRESS', messages.getString('statusINPROGRESS'));
   };
 
 ////////////////////////////////////////////////////////////
@@ -303,7 +302,7 @@ var monkeysphere = (function() {
       } else {
         ms.log("validation agent did not respond.");
         //alert(monkeysphere.messages.getString("agentError"));
-        setStatus(browser, 'ERROR', monkeysphere.messages.getString('noResponseFromAgent'));
+        setStatus(browser, 'ERROR', messages.getString('noResponseFromAgent'));
       }
 
       // update the current display, so that if we're looking at the
