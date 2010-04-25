@@ -28,44 +28,6 @@ var monkeysphere = (function() {
   // NOTVALID   : processed and not validated
 
 ////////////////////////////////////////////////////////////
-// SITE URI CHECK FUNCTION
-////////////////////////////////////////////////////////////
-
-  //////////////////////////////////////////////////////////
-  // check uri is relevant to monkeysphere
-  var isRelevantURI = function(uri) {
-    ////////////////////////////////////////
-    // check host
-    try {
-      var host = uri.host;
-    } catch(e) {
-      ms.log("host data empty.");
-      return null;
-    }
-
-    ////////////////////////////////////////
-    // check scheme
-    try {
-      var scheme = uri.scheme;
-    } catch(e) {
-      ms.log("scheme data empty.");
-      return null;
-    }
-
-    ms.log("url: " + uri.asciiSpec);
-
-    ////////////////////////////////////////
-    // check if scheme is https
-    if(scheme != "https") {
-      ms.log("scheme not https.");
-      return null;
-    }
-
-    // if uri is relevant for monkeysphere return true
-    return true;
-  };
-
-////////////////////////////////////////////////////////////
 // MAIN SITE CHECK FUNCTION
 ////////////////////////////////////////////////////////////
 
@@ -77,7 +39,7 @@ var monkeysphere = (function() {
     var uri = browser.currentURI;
 
     // if uri not relevant, return
-    if(!isRelevantURI(uri)) {
+    if(!ms.isRelevantURI(uri)) {
       setStatus(browser, 'NEUTRAL');
       return;
     }

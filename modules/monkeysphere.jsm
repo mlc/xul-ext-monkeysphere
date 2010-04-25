@@ -20,6 +20,7 @@
 var EXPORTED_SYMBOLS = [
                         "agent_socket",
                         "log",
+                        "isRelevantURI",
                         "getInvalidCert",
                         "overrides"
                        ];
@@ -88,6 +89,44 @@ var EXPORTED_SYMBOLS = [
     for (var key in obj) {
       log("dump: " + key + " = " + obj[key]);
     }
+  };
+
+////////////////////////////////////////////////////////////
+// SITE URI CHECK FUNCTION
+////////////////////////////////////////////////////////////
+
+  //////////////////////////////////////////////////////////
+  // check uri is relevant to monkeysphere
+  var isRelevantURI = function(uri) {
+    ////////////////////////////////////////
+    // check host
+    try {
+      var host = uri.host;
+    } catch(e) {
+      log("host data empty.");
+      return null;
+    }
+
+    ////////////////////////////////////////
+    // check scheme
+    try {
+      var scheme = uri.scheme;
+    } catch(e) {
+      log("scheme data empty.");
+      return null;
+    }
+
+    log("url: " + uri.asciiSpec);
+
+    ////////////////////////////////////////
+    // check if scheme is https
+    if(scheme != "https") {
+      log("scheme not https.");
+      return null;
+    }
+
+    // if uri is relevant for monkeysphere return true
+    return true;
   };
 
   ////////////////////////////////////////////////////////////
