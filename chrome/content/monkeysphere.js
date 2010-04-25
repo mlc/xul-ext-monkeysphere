@@ -191,144 +191,141 @@ var monkeysphere = (function() {
 
   return {
 
-////////////////////////////////////////////////////////////
-// INITIALIZATION
-////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////
+    // INITIALIZATION
+    ////////////////////////////////////////////////////////
 
-  //////////////////////////////////////////////////////////
-  // initialization function
-  init: function() {
-    ms.log("---- begin initialization ----");
+    init: function() {
+      ms.log("---- begin initialization ----");
 
-    // get localization messages
-    monkeysphere.messages = document.getElementById("message_strings");
+      // get localization messages
+      monkeysphere.messages = document.getElementById("message_strings");
 
-    // create event listeners
-    ms.log("creating listeners...");
-    gBrowser.addProgressListener(monkeysphere.progressListener);
-    gBrowser.addTabsProgressListener(monkeysphere.tabProgressListener);
+      // create event listeners
+      ms.log("creating listeners...");
+      gBrowser.addProgressListener(monkeysphere.progressListener);
+      gBrowser.addTabsProgressListener(monkeysphere.tabProgressListener);
 
-    ms.log("---- initialization complete ----");
-  },
-
-////////////////////////////////////////////////////////////
-// LISTENERS
-////////////////////////////////////////////////////////////
-
-  // https://developer.mozilla.org/en/nsIWebProgressListener
-  progressListener: {
-    onLocationChange: function(aWebProgress, aRequest, aLocation) {
-      ms.log("++++ PL location change: " + aLocation.prePath);
-      updateDisplay();
+      ms.log("---- initialization complete ----");
     },
 
-    onProgressChange: function() {},
-    onSecurityChange: function() {},
-    onStateChange: function(aWebProgress, aRequest, aStateFlags, aStatus) {},
-    onStatusChange: function(aWebProgress, aRequest, aStatus, aMessage) {}
-  },
+    ////////////////////////////////////////////////////////
+    // LISTENERS
+    ////////////////////////////////////////////////////////
 
-  // https://developer.mozilla.org/en/Listening_to_events_on_all_tabs
-  tabProgressListener: {
-    onSecurityChange: function(aBrowser, aWebProgress, aRequest, aState) {
-      ms.log("++++ tabPL security change: ");
-      checkSite(aBrowser, aState);
-      updateDisplay();
+    // https://developer.mozilla.org/en/nsIWebProgressListener
+    progressListener: {
+      onLocationChange: function(aWebProgress, aRequest, aLocation) {
+        ms.log("++++ PL location change: " + aLocation.prePath);
+        updateDisplay();
+      },
+
+      onProgressChange: function() {},
+      onSecurityChange: function() {},
+      onStateChange: function(aWebProgress, aRequest, aStateFlags, aStatus) {},
+      onStatusChange: function(aWebProgress, aRequest, aStatus, aMessage) {}
     },
 
-    onLocationChange: function(aBrowser, aWebProgress, aRequest, aLocation) {
-      //ms.log("++++ tabPL location change: " + aLocation.prePath);
+    // https://developer.mozilla.org/en/Listening_to_events_on_all_tabs
+    tabProgressListener: {
+      onSecurityChange: function(aBrowser, aWebProgress, aRequest, aState) {
+        ms.log("++++ tabPL security change: ");
+        checkSite(aBrowser, aState);
+        updateDisplay();
+      },
+
+      onLocationChange: function(aBrowser, aWebProgress, aRequest, aLocation) {
+        //ms.log("++++ tabPL location change: " + aLocation.prePath);
+      },
+      onProgressChange: function(aBrowser, awebProgress, aRequest, curSelfProgress, maxSelfProgress, curTotalProgress, maxTotalProgress) {
+        //ms.log("++++ tabPL progress change: " + curSelfProgress);
+      },
+      onStateChange: function(aBrowser, aWebProgress, aRequest, aStateFlags, aStatus) {
+        ms.log("++++ tabPL state change: " + aRequest);
+        updateDisplay();
+      },
+      onStatusChange: function(aBrowser, aWebProgress, aRequest, aStatus, aMessage) {
+        //ms.log("++++ tabPL status change: " + aRequest);
+      }
     },
-    onProgressChange: function(aBrowser, awebProgress, aRequest, curSelfProgress, maxSelfProgress, curTotalProgress, maxTotalProgress) {
-      //ms.log("++++ tabPL progress change: " + curSelfProgress);
-    },
-    onStateChange: function(aBrowser, aWebProgress, aRequest, aStateFlags, aStatus) {
-      ms.log("++++ tabPL state change: " + aRequest);
-      updateDisplay();
-    },
-    onStatusChange: function(aBrowser, aWebProgress, aRequest, aStatus, aMessage) {
-      //ms.log("++++ tabPL status change: " + aRequest);
-    }
-  },
 
-  //////////////////////////////////////////////////////////
-  // when the XMLHttpRequest to the agent state changes
-  onAgentStateChange: function(client, browser, cert) {
-    ms.log("agent query state change: " + client.readyState);
-    ms.log("  status: " + client.status);
-    ms.log("  response: " + client.responseText);
+    ////////////////////////////////////////////////////////
+    // when the XMLHttpRequest to the agent state changes
+    onAgentStateChange: function(client, browser, cert) {
+      ms.log("agent query state change: " + client.readyState);
+      ms.log("  status: " + client.status);
+      ms.log("  response: " + client.responseText);
 
-    if (client.readyState == 4) {
-      if (client.status == 200) {
+      if (client.readyState == 4) {
+        if (client.status == 200) {
 
-        var response = JSON.parse(client.responseText);
+          var response = JSON.parse(client.responseText);
 
-        if (response.valid) {
+          if (response.valid) {
 
-          // VALID!
-          ms.log("SITE VERIFIED!");
-          ms.overrides.set(client.apd, response);
-          ms.setStatus(browser, 'VALID', response.message);
+            // VALID!
+            ms.log("SITE VERIFIED!");
+            ms.overrides.set(client.apd, response);
+            ms.setStatus(browser, 'VALID', response.message);
 
-          // reload page
-          ms.log("reloading browser...");
-          browser.webNavigation.reload(nsIWebNavigation.LOAD_FLAGS_NONE);
+            // reload page
+            ms.log("reloading browser...");
+            browser.webNavigation.reload(nsIWebNavigation.LOAD_FLAGS_NONE);
 
+          } else {
+
+            // NOT VALID
+            ms.log("site not verified.");
+            ms.setStatus(browser, 'NOTVALID', response.message);
+
+          }
         } else {
-
-          // NOT VALID
-          ms.log("site not verified.");
-          ms.setStatus(browser, 'NOTVALID', response.message);
-
+          ms.log("validation agent did not respond.");
+          //alert(monkeysphere.messages.getString("agentError"));
+          ms.setStatus(browser, 'ERROR', monkeysphere.messages.getString('noResponseFromAgent'));
         }
-      } else {
-        ms.log("validation agent did not respond.");
-        //alert(monkeysphere.messages.getString("agentError"));
-        ms.setStatus(browser, 'ERROR', monkeysphere.messages.getString('noResponseFromAgent'));
+
+        // update the current display, so that if we're looking at the
+        // browser being processed, the result will be immediately displayed
+        updateDisplay();
       }
-
-      // update the current display, so that if we're looking at the
-      // browser being processed, the result will be immediately displayed
-      updateDisplay();
-    }
-  },
-
-////////////////////////////////////////////////////////////
-// CONTEXT MENU FUNCTIONS
-////////////////////////////////////////////////////////////
-
-  contextMenuFunctions: {
-
-    clearSite: function() {
-      var browser = gBrowser.selectedBrowser;
-      var uri = browser.currentURI;
-      try {
-        var cert = browser.securityUI.SSLStatus.serverCert;
-      } catch(e) {
-        ms.log("no valid cert found?");
-        return;
-      }
-      var apd = ms.createAgentPostData(uri, cert);
-      ms.overrides.clear(apd);
-      // FIXME: why does the override seem to persist after a clear?
-      if(!ms.overrides.certStatus(apd)) {
-        alert('Monkeysphere: site clear error.  Is override cert cleared?');
-      }
-      var newstate = browser.monkeysphere.state;
-      var newmessage = browser.monkeysphere.message + ' [NO LONGER CACHED]';
-      ms.setStatus(browser, newstate, newmessage);
-      updateDisplay();
     },
 
-    certs: function() {
-      openDialog("chrome://pippki/content/certManager.xul", "Certificate Manager");
-    },
+    ////////////////////////////////////////////////////////
+    // CONTEXT MENU FUNCTIONS
+    ////////////////////////////////////////////////////////
 
-    help: function() {
-      gBrowser.loadOneTab("chrome://monkeysphere/locale/help.html",
-      null, null, null, false);
+    contextMenuFunctions: {
+
+      clearSite: function() {
+        var browser = gBrowser.selectedBrowser;
+        var uri = browser.currentURI;
+        try {
+          var cert = browser.securityUI.SSLStatus.serverCert;
+        } catch(e) {
+          ms.log("no valid cert found?");
+          return;
+        }
+        var apd = ms.createAgentPostData(uri, cert);
+        ms.overrides.clear(apd);
+        // FIXME: why does the override seem to persist after a clear?
+        if(!ms.overrides.certStatus(apd)) {
+          alert('Monkeysphere: site clear error.  Is override cert cleared?');
+        }
+        var newstate = browser.monkeysphere.state;
+        var newmessage = browser.monkeysphere.message + ' [NO LONGER CACHED]';
+        ms.setStatus(browser, newstate, newmessage);
+        updateDisplay();
+      },
+
+      certs: function() {
+        openDialog("chrome://pippki/content/certManager.xul", "Certificate Manager");
+      },
+
+      help: function() {
+        gBrowser.loadOneTab("chrome://monkeysphere/locale/help.html",
+        null, null, null, false);
+      }
     }
-  }
-};
+  };
 })();
-
