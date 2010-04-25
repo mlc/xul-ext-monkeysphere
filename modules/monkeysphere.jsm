@@ -18,211 +18,211 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 var EXPORTED_SYMBOLS = [
-                        "agent_socket",
-                        "log",
-                        "isRelevantURI",
-                        "createAgentPostData",
-                        "getInvalidCert",
-                        "overrides"
-                       ];
+  "agent_socket",
+  "log",
+  "isRelevantURI",
+  "createAgentPostData",
+  "getInvalidCert",
+  "overrides"
+];
 
-  // select agent URL from environment variable or explicitly-set preference.
-  // "http://localhost:8901" <-- NO TRAILING SLASH
-  var agent_socket = function() {
-    var envvar = "MONKEYSPHERE_VALIDATION_AGENT_SOCKET";;
+// preferences in about:config
+var prefs = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService).getBranch("extensions.monkeysphere.");
+
+// select agent URL from environment variable or explicitly-set preference.
+// "http://localhost:8901" <-- NO TRAILING SLASH
+var agent_socket = function() {
+  var envvar = "MONKEYSPHERE_VALIDATION_AGENT_SOCKET";;
+  try {
+    envvar = prefs.getCharPref("validation_agent_socket_environment_variable");
+  } catch (e) {
+    log("falling back to built-in environment variable: " + envvar);
+  }
+  log("using environment variable " + envvar);
+  // get the agent URL from the environment
+  // https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIEnvironment
+  var ret = Components.classes["@mozilla.org/process/environment;1"].getService(Components.interfaces.nsIEnvironment).get(envvar);
+  // return error if agent URL not set
+  if(!ret) {
+    ret = "http://localhost:8901";;
     try {
-      envvar = prefs.getCharPref("validation_agent_socket_environment_variable");
+      ret = prefs.getCharPref("default_socket");
     } catch (e) {
-      log("falling back to built-in environment variable: " + envvar);
+      log("falling back to built-in default socket location: " + ret);
     }
-    log("using environment variable " + envvar);
-    // get the agent URL from the environment
-    // https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIEnvironment
-    var ret = Components.classes["@mozilla.org/process/environment;1"].getService(Components.interfaces.nsIEnvironment).get(envvar);
-    // return error if agent URL not set
-    if(!ret) {
-      ret = "http://localhost:8901";;
-      try {
-        ret = prefs.getCharPref("default_socket");
-      } catch (e) {
-        log("falling back to built-in default socket location: " + ret);
-      }
 
-      log(envvar + " environment variable not set.  Using default of " + ret);
-    }
-    // replace trailing slashes
-    ret = ret.replace(/\/*$/, '');
-    log("agent socket: " + ret);
+    log(envvar + " environment variable not set.  Using default of " + ret);
+  }
+  // replace trailing slashes
+  ret = ret.replace(/\/*$/, '');
+  log("agent socket: " + ret);
 
-    return ret;
-  };
+  return ret;
+};
 
-  // preferences in about:config
-  var prefs = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService).getBranch("extensions.monkeysphere.");
+////////////////////////////////////////////////////////////
+// LOG FUNCTIONS
+////////////////////////////////////////////////////////////
 
-  ////////////////////////////////////////////////////////////
-  // LOG FUNCTIONS
-  ////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
+var log = function(line) {
+  var message = "monkeysphere: " + line;
 
-  //////////////////////////////////////////////////////////
-  var log = function(line) {
-    var message = "monkeysphere: " + line;
-
+  try {
+    dump(message + "\n");
     try {
-      dump(message + "\n");
-      try {
-        // this line works in extensions
-        Firebug.Console.log(message);
-      } catch(e) {
-        // ignore, this will blow up if Firebug is not installed
-      }
-      try {
-        console.log(message); // this line works in HTML files
-      } catch(e) {
-        // ignore, this will blow up if Firebug is not installed
-      }
+      // this line works in extensions
+      Firebug.Console.log(message);
     } catch(e) {
-      alert(e);
+      // ignore, this will blow up if Firebug is not installed
     }
-  };
+    try {
+      console.log(message); // this line works in HTML files
+    } catch(e) {
+      // ignore, this will blow up if Firebug is not installed
+    }
+  } catch(e) {
+    alert(e);
+  }
+};
 
-  var objdump = function(obj) {
-    for (var key in obj) {
-      log("dump: " + key + " = " + obj[key]);
-    }
-  };
+var objdump = function(obj) {
+  for (var key in obj) {
+    log("dump: " + key + " = " + obj[key]);
+  }
+};
 
 ////////////////////////////////////////////////////////////
 // SITE URI CHECK FUNCTION
 ////////////////////////////////////////////////////////////
 
-  //////////////////////////////////////////////////////////
-  // check uri is relevant to monkeysphere
-  var isRelevantURI = function(uri) {
-    ////////////////////////////////////////
-    // check host
-    try {
-      var host = uri.host;
-    } catch(e) {
-      log("host data empty.");
-      return null;
-    }
+//////////////////////////////////////////////////////////
+// check uri is relevant to monkeysphere
+var isRelevantURI = function(uri) {
+  ////////////////////////////////////////
+  // check host
+  try {
+    var host = uri.host;
+  } catch(e) {
+    log("host data empty.");
+    return null;
+  }
 
-    ////////////////////////////////////////
-    // check scheme
-    try {
-      var scheme = uri.scheme;
-    } catch(e) {
-      log("scheme data empty.");
-      return null;
-    }
+  ////////////////////////////////////////
+  // check scheme
+  try {
+    var scheme = uri.scheme;
+  } catch(e) {
+    log("scheme data empty.");
+    return null;
+  }
 
-    log("url: " + uri.asciiSpec);
+  log("url: " + uri.asciiSpec);
 
-    ////////////////////////////////////////
-    // check if scheme is https
-    if(scheme != "https") {
-      log("scheme not https.");
-      return null;
-    }
+  ////////////////////////////////////////
+  // check if scheme is https
+  if(scheme != "https") {
+    log("scheme not https.");
+    return null;
+  }
 
-    // if uri is relevant for monkeysphere return true
-    return true;
-  };
+  // if uri is relevant for monkeysphere return true
+  return true;
+};
 
 ////////////////////////////////////////////////////////////
 // AGENT POST DATA FUNCTION
 ////////////////////////////////////////////////////////////
 
-  var createAgentPostData = function(uri, cert) {
-    // get certificate info
-    var cert_length = {};
-    var dummy = {};
-    var cert_data = cert.getRawDER(cert_length, dummy);
+var createAgentPostData = function(uri, cert) {
+  // get certificate info
+  var cert_length = {};
+  var dummy = {};
+  var cert_data = cert.getRawDER(cert_length, dummy);
 
-    // "agent post data"
-    var apd = {
-      uri: uri,
-      cert: cert,
-      data: {
-        context: uri.scheme,
-        peer: uri.hostPort,
-        pkc: {
-          type: "x509der",
-          data: cert_data
-        }
-      },
-      toJSON: function() {
-        return JSON.stringify(this.data);
-      },
-      toOverrideLabel: function() {
-        return this.data.context + '|' + this.data.peer + '|' + this.data.pkc.type + '|' + this.data.pkc.data;
-      },
-      log: function() {
-        log("agent post data:");
-        log("  context: " + this.data.context);
-        log("  peer: " + this.data.peer);
-        log("  pkc.type: " + this.data.pkc.type);
-        //log("  pkc.data: " + this.data.pkc.data); // this can be big
-        //log("  JSON: " + this.toJSON());
+  // "agent post data"
+  var apd = {
+    uri: uri,
+    cert: cert,
+    data: {
+      context: uri.scheme,
+      peer: uri.hostPort,
+      pkc: {
+        type: "x509der",
+        data: cert_data
       }
-    };
-
-    return apd;
-  };
-
-  ////////////////////////////////////////////////////////////
-  // CERT FUNCTIONS
-  ////////////////////////////////////////////////////////////
-
-  // certificate override service class
-  // http://www.oxymoronical.com/experiments/xpcomref/applications/Firefox/3.5/interfaces/nsICertOverrideService
-  var certOverrideService = Components.classes["@mozilla.org/security/certoverride;1"].getService(Components.interfaces.nsICertOverrideService);
-
-  //////////////////////////////////////////////////////////
-  // FWIW, aWebProgress listener has:
-  // securityUI = [xpconnect wrapped (nsISupports, nsISecureBrowserUI, nsISSLStatusProvider)]
-  // but i don't think it can be used because it doesn't hold invalid cert info
-  // FIXME: is there a better way to get the cert for the actual current connection?
-  var getInvalidCert = function(uri) {
-    try {
-      var cert = getInvalidCertSSLStatus(uri).QueryInterface(Components.interfaces.nsISSLStatus).serverCert;
-      printCertInfo(cert);
-      return cert;
-    } catch(e) {
-      return null;
+    },
+    toJSON: function() {
+      return JSON.stringify(this.data);
+    },
+    toOverrideLabel: function() {
+      return this.data.context + '|' + this.data.peer + '|' + this.data.pkc.type + '|' + this.data.pkc.data;
+    },
+    log: function() {
+      log("agent post data:");
+      log("  context: " + this.data.context);
+      log("  peer: " + this.data.peer);
+      log("  pkc.type: " + this.data.pkc.type);
+      //log("  pkc.data: " + this.data.pkc.data); // this can be big
+      //log("  JSON: " + this.toJSON());
     }
   };
 
-  //////////////////////////////////////////////////////////
-  // gets current ssl status info
-  // http://www.oxymoronical.com/experiments/apidocs/interface/nsIRecentBadCertsService
-  var getInvalidCertSSLStatus = function(uri) {
-    var recentCertsService =
-      Components.classes["@mozilla.org/security/recentbadcerts;1"].getService(Components.interfaces.nsIRecentBadCertsService);
-    if (!recentCertsService)
-      return null;
+  return apd;
+};
 
-    var port = uri.port;
-    if(port == -1)
-      port = 443;
-    var hostWithPort = uri.host + ":" + port;
+////////////////////////////////////////////////////////////
+// CERT FUNCTIONS
+////////////////////////////////////////////////////////////
 
-    var SSLStatus = recentCertsService.getRecentBadCert(hostWithPort);
-    if (!SSLStatus)
-      return null;
+// certificate override service class
+// http://www.oxymoronical.com/experiments/xpcomref/applications/Firefox/3.5/interfaces/nsICertOverrideService
+var certOverrideService = Components.classes["@mozilla.org/security/certoverride;1"].getService(Components.interfaces.nsICertOverrideService);
 
-    return SSLStatus;
-  };
+//////////////////////////////////////////////////////////
+// FWIW, aWebProgress listener has:
+// securityUI = [xpconnect wrapped (nsISupports, nsISecureBrowserUI, nsISSLStatusProvider)]
+// but i don't think it can be used because it doesn't hold invalid cert info
+// FIXME: is there a better way to get the cert for the actual current connection?
+var getInvalidCert = function(uri) {
+  try {
+    var cert = getInvalidCertSSLStatus(uri).QueryInterface(Components.interfaces.nsISSLStatus).serverCert;
+    printCertInfo(cert);
+    return cert;
+  } catch(e) {
+    return null;
+  }
+};
 
-  //////////////////////////////////////////////////////////
-  // Print SSL certificate details
-  // https://developer.mozilla.org/En/How_to_check_the_security_state_of_an_XMLHTTPRequest_over_SSL
-  var printCertInfo = function(cert) {
-    const Ci = Components.interfaces;
+//////////////////////////////////////////////////////////
+// gets current ssl status info
+// http://www.oxymoronical.com/experiments/apidocs/interface/nsIRecentBadCertsService
+var getInvalidCertSSLStatus = function(uri) {
+  var recentCertsService =
+    Components.classes["@mozilla.org/security/recentbadcerts;1"].getService(Components.interfaces.nsIRecentBadCertsService);
+  if (!recentCertsService)
+    return null;
 
-    log("certificate:");
-    switch (cert.verifyForUsage(Ci.nsIX509Cert.CERT_USAGE_SSLServer)) {
+  var port = uri.port;
+  if(port == -1)
+    port = 443;
+  var hostWithPort = uri.host + ":" + port;
+
+  var SSLStatus = recentCertsService.getRecentBadCert(hostWithPort);
+  if (!SSLStatus)
+    return null;
+
+  return SSLStatus;
+};
+
+//////////////////////////////////////////////////////////
+// Print SSL certificate details
+// https://developer.mozilla.org/En/How_to_check_the_security_state_of_an_XMLHTTPRequest_over_SSL
+var printCertInfo = function(cert) {
+  const Ci = Components.interfaces;
+
+  log("certificate:");
+  switch (cert.verifyForUsage(Ci.nsIX509Cert.CERT_USAGE_SSLServer)) {
     case Ci.nsIX509Cert.VERIFIED_OK:
       log("\tSSL status: OK");
       break;
@@ -250,26 +250,26 @@ var EXPORTED_SYMBOLS = [
     default:
       log("\tSSL status: unexpected failure");
       break;
-    }
-    log("\tCommon Name: " + cert.commonName);
-    log("\tOrganisation: " + cert.organization);
-    log("\tIssuer: " + cert.issuerOrganization);
-    log("\tSHA1 fingerprint: " + cert.sha1Fingerprint);
+  }
+  log("\tCommon Name: " + cert.commonName);
+  log("\tOrganisation: " + cert.organization);
+  log("\tIssuer: " + cert.issuerOrganization);
+  log("\tSHA1 fingerprint: " + cert.sha1Fingerprint);
 
-    var validity = cert.validity.QueryInterface(Ci.nsIX509CertValidity);
-    log("\tValid from: " + validity.notBeforeGMT);
-    log("\tValid until: " + validity.notAfterGMT);
-  };
+  var validity = cert.validity.QueryInterface(Ci.nsIX509CertValidity);
+  log("\tValid from: " + validity.notBeforeGMT);
+  log("\tValid until: " + validity.notAfterGMT);
+};
 
-  ////////////////////////////////////////////////////////////
-  // OVERRIDE CACHE OBJECT
-  ////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+// OVERRIDE CACHE OBJECT
+////////////////////////////////////////////////////////////
 
-  //////////////////////////////////////////////////////////
-  // object to store and retrieve data about monkeysphere status for sites
-  // uses string of apd as key, and agent response as data
-  var overrides = (function() {
-
+//////////////////////////////////////////////////////////
+// object to store and retrieve data about monkeysphere status for sites
+// uses string of apd as key, and agent response as data
+var overrides = (
+  function() {
     // response cache object
     var responses = {};
 
@@ -280,6 +280,7 @@ var EXPORTED_SYMBOLS = [
         log("**** SET OVERRIDE ****");
 
         var uri = apd.uri;
+
         var cert = apd.cert;
 
         var SSLStatus = getInvalidCertSSLStatus(uri);
@@ -343,4 +344,4 @@ var EXPORTED_SYMBOLS = [
         delete responses[apd.toOverrideLabel()];
       }
     };
-  })();
+})();
