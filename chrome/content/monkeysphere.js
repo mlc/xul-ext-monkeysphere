@@ -53,7 +53,7 @@ var monkeysphere = (function() {
 
       // if a monkeysphere-generated cert override is being used by this connection, then we should be setting the status from the override
       var cert = browser.securityUI.SSLStatus.serverCert;
-      var apd = createAgentPostData(uri, cert);
+      var apd = ms.createAgentPostData(uri, cert);
       var response = ms.overrides.response(apd);
 
       if ( typeof response === 'undefined' ) {
