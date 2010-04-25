@@ -2,64 +2,49 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"><head>
 
-
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-<title>The Monkeysphere Project</title>
+<title>The Monkeysphere Project - Mozilla/Firefox/Iceweasel XUL Extension</title>
 
-<link rel="stylesheet" href="style.css" type="text/css" />
-<link rel="stylesheet" href="local.css" type="text/css" />
+<link rel="stylesheet" href="chrome://monkeysphere/content/local.css" type="text/css" />
 </head><body>
-
-<div class="header">
-<span>
-
-The Monkeysphere Project
-</span>
-
-</div>
-
-
-<div class="actions">
-</div>
-
-
 
 <div id="sidebar">
 <table class="sitenav" cellpadding="0" cellspacing="0">
 <colgroup span="1" width="120">
 </colgroup><tbody><tr>
-<td rowspan="2"><a href="http://web.monkeysphere.info/"><img class="logo" src="logo.png" alt="monkeysphere" /></a></td>
-<td><a href="http://web.monkeysphere.info/"><img class="title" src="title.png" alt="monkeysphere" /></a></td>
+<td rowspan="2">
+  <a href="http://web.monkeysphere.info/">
+  <img class="logo" src="chrome://monkeysphere/content/logo.png" alt="monkeysphere" style="border: 0;"/></a>
+</td>
+<td>
+  <a href="http://web.monkeysphere.info/"><img class="title"
+  src="chrome://monkeysphere/content/title.png" alt="monkeysphere" style="border: 0;"/></a>
+</td>
 </tr><tr>
 <td>
 &nbsp;
 </td>
 </tr>
 </tbody></table>
-
 </div>
 
 <div id="content">
-<h1>The Monkeysphere Project</h1>
 
-<p>The Monkeysphere project's goal is to extend OpenPGP's web of trust to
-new areas of the Internet to help us securely identify each other
-while we work online.</p>
+  <h1>The Monkeysphere Project XUL Extension</h1>
 
-<p>Specifically, monkeysphere currently offers a framework to leverage
-the OpenPGP web of trust for OpenSSH authentication.</p>
+  <p>The Monkeysphere project's goal is to extend OpenPGP's web of
+  trust to new areas of the Internet to help us securely identify each
+  other while we work online.</p>
 
-<p>In other words, it allows you to use secure shell as you normally do,
-but to identify yourself and the servers you administer or connect to
-with your OpenPGP keys.  OpenPGP keys are tracked via GnuPG, and
-monkeysphere manages the <code>known_hosts</code> and <code>authorized_keys</code> files
-used by OpenSSH for authentication, checking them for cryptographic
-validity.</p>
+  <p>This Mozilla/Firefox/Iceweasel XUL extension, along with a
+  Monkeysphere validation agent, will allow you to validate https web
+  sites that have been put on the OpenPGP web of trust.</p>
 
-<h2>Further Information</h2>
+  <h2>Further Information</h2>
 
-For further information, see <a href="http://monkeysphere.info/">monkeysphere.info</a>.
+  For further information, see <a href="http://monkeysphere.info/">monkeysphere.info</a>.
 
 </div>
 
-</body></html>
+</body>
+</html>

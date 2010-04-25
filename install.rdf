@@ -32,7 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     <em:contributor>Jameson Graef Rollins</em:contributor>
     <em:contributor>Daniel Kahn Gillmor</em:contributor>
     <em:homepageURL>http://web.monkeysphere.info/validation-agent/</em:homepageURL>
-    <em:iconURL>chrome://monkeysphere/content/logo.png</em:iconURL>
+    <em:iconURL>chrome://monkeysphere/content/logo-small.png</em:iconURL>
  
     <!-- Firefox -->
     <em:targetApplication>   
