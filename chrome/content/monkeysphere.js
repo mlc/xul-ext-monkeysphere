@@ -27,40 +27,6 @@ var monkeysphere = (function() {
   // VALID      : processed and validated
   // NOTVALID   : processed and not validated
 
-  // select agent URL from environment variable or explicitly-set preference.
-  // "http://localhost:8901" <-- NO TRAILING SLASH
-  var agent_socket = function() {
-    var envvar = "MONKEYSPHERE_VALIDATION_AGENT_SOCKET";;
-    try {
-      envvar = prefs.getCharPref("validation_agent_socket_environment_variable");
-    } catch (e) {
-      ms.log("falling back to built-in environment variable: " + envvar);
-    }
-    ms.log("using environment variable " + envvar);
-    // get the agent URL from the environment
-    // https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIEnvironment
-    var ret = Components.classes["@mozilla.org/process/environment;1"].getService(Components.interfaces.nsIEnvironment).get(envvar);
-    // return error if agent URL not set
-    if(!ret) {
-      ret = "http://localhost:8901";;
-      try {
-        ret = prefs.getCharPref("default_socket");
-      } catch (e) {
-        ms.log("falling back to built-in default socket location: " + ret);
-      }
-
-      ms.log(envvar + " environment variable not set.  Using default of " + ret);
-    }
-    // replace trailing slashes
-    ret = ret.replace(/\/*$/, '');
-    ms.log("agent socket: " + ret);
-
-    return ret;
-  };
-
-  // preferences in about:config
-  var prefs = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService).getBranch("extensions.monkeysphere.");
-
 ////////////////////////////////////////////////////////////
 // SITE URI CHECK FUNCTION
 ////////////////////////////////////////////////////////////
@@ -219,7 +185,7 @@ var monkeysphere = (function() {
   // query the validation agent
   var queryAgent = function(browser, cert) {
     ms.log("#### querying validation agent ####");
-    var socket = agent_socket();
+    var socket = ms.agent_socket();
 
     var uri = browser.currentURI;
 
@@ -312,7 +278,7 @@ var monkeysphere = (function() {
 
   var ms = {};
   Components.utils.import("resource://monkeysphere/monkeysphere.jsm", ms);
-                      
+
 ////////////////////////////////////////////////////////////
 // EXTERNAL INTERFACE
 ////////////////////////////////////////////////////////////

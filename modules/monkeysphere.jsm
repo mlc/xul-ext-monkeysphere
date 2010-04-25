@@ -17,10 +17,46 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-var EXPORTED_SYMBOLS = ["log",
-                        "getInvalidCert", 
+var EXPORTED_SYMBOLS = [
+                        "agent_socket",
+                        "log",
+                        "getInvalidCert",
                         "overrides"
                        ];
+
+  // select agent URL from environment variable or explicitly-set preference.
+  // "http://localhost:8901" <-- NO TRAILING SLASH
+  var agent_socket = function() {
+    var envvar = "MONKEYSPHERE_VALIDATION_AGENT_SOCKET";;
+    try {
+      envvar = prefs.getCharPref("validation_agent_socket_environment_variable");
+    } catch (e) {
+      log("falling back to built-in environment variable: " + envvar);
+    }
+    log("using environment variable " + envvar);
+    // get the agent URL from the environment
+    // https://developer.mozilla.org/en/XPCOM_Interface_Reference/nsIEnvironment
+    var ret = Components.classes["@mozilla.org/process/environment;1"].getService(Components.interfaces.nsIEnvironment).get(envvar);
+    // return error if agent URL not set
+    if(!ret) {
+      ret = "http://localhost:8901";;
+      try {
+        ret = prefs.getCharPref("default_socket");
+      } catch (e) {
+        log("falling back to built-in default socket location: " + ret);
+      }
+
+      log(envvar + " environment variable not set.  Using default of " + ret);
+    }
+    // replace trailing slashes
+    ret = ret.replace(/\/*$/, '');
+    log("agent socket: " + ret);
+
+    return ret;
+  };
+
+  // preferences in about:config
+  var prefs = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService).getBranch("extensions.monkeysphere.");
 
   ////////////////////////////////////////////////////////////
   // LOG FUNCTIONS
