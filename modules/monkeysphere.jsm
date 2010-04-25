@@ -21,6 +21,7 @@ var EXPORTED_SYMBOLS = [
                         "agent_socket",
                         "log",
                         "isRelevantURI",
+                        "createAgentPostData",
                         "getInvalidCert",
                         "overrides"
                        ];
@@ -127,6 +128,47 @@ var EXPORTED_SYMBOLS = [
 
     // if uri is relevant for monkeysphere return true
     return true;
+  };
+
+////////////////////////////////////////////////////////////
+// AGENT POST DATA FUNCTION
+////////////////////////////////////////////////////////////
+
+  var createAgentPostData = function(uri, cert) {
+    // get certificate info
+    var cert_length = {};
+    var dummy = {};
+    var cert_data = cert.getRawDER(cert_length, dummy);
+
+    // "agent post data"
+    var apd = {
+      uri: uri,
+      cert: cert,
+      data: {
+        context: uri.scheme,
+        peer: uri.hostPort,
+        pkc: {
+          type: "x509der",
+          data: cert_data
+        }
+      },
+      toJSON: function() {
+        return JSON.stringify(this.data);
+      },
+      toOverrideLabel: function() {
+        return this.data.context + '|' + this.data.peer + '|' + this.data.pkc.type + '|' + this.data.pkc.data;
+      },
+      log: function() {
+        log("agent post data:");
+        log("  context: " + this.data.context);
+        log("  peer: " + this.data.peer);
+        log("  pkc.type: " + this.data.pkc.type);
+        //log("  pkc.data: " + this.data.pkc.data); // this can be big
+        //log("  JSON: " + this.toJSON());
+      }
+    };
+
+    return apd;
   };
 
   ////////////////////////////////////////////////////////////

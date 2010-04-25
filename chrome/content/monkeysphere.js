@@ -106,43 +106,6 @@ var monkeysphere = (function() {
 // AGENT QUERY FUNCTIONS
 ////////////////////////////////////////////////////////////
 
-  var createAgentPostData = function(uri, cert) {
-    // get certificate info
-    var cert_length = {};
-    var dummy = {};
-    var cert_data = cert.getRawDER(cert_length, dummy);
-
-    // "agent post data"
-    var apd = {
-      uri: uri,
-      cert: cert,
-      data: {
-        context: uri.scheme,
-        peer: uri.hostPort,
-        pkc: {
-          type: "x509der",
-          data: cert_data
-        }
-      },
-      toJSON: function() {
-        return JSON.stringify(this.data);
-      },
-      toOverrideLabel: function() {
-        return this.data.context + '|' + this.data.peer + '|' + this.data.pkc.type + '|' + this.data.pkc.data;
-      },
-      log: function() {
-        ms.log("agent post data:");
-        ms.log("  context: " + this.data.context);
-        ms.log("  peer: " + this.data.peer);
-        ms.log("  pkc.type: " + this.data.pkc.type);
-        //ms.log("  pkc.data: " + this.data.pkc.data); // this can be big
-        //ms.log("  JSON: " + this.toJSON());
-      }
-    };
-
-    return apd;
-  };
-
   //////////////////////////////////////////////////////////
   // query the validation agent
   var queryAgent = function(browser, cert) {
@@ -155,7 +118,7 @@ var monkeysphere = (function() {
     var client = new XMLHttpRequest();
 
     // make JSON query string
-    client.apd = createAgentPostData(uri, cert);
+    client.apd = ms.createAgentPostData(uri, cert);
     client.apd.log();
     var query = client.apd.toJSON();
 
@@ -364,7 +327,7 @@ var monkeysphere = (function() {
         ms.log("no valid cert found?");
         return;
       }
-      var apd = createAgentPostData(uri, cert);
+      var apd = ms.createAgentPostData(uri, cert);
       ms.overrides.clear(apd);
       // FIXME: why does the override seem to persist after a clear?
       if(!ms.overrides.certStatus(apd)) {
