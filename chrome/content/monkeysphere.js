@@ -159,17 +159,16 @@ var monkeysphere = (function() {
       case 'INPROGRESS':
         icon.setAttribute("src", "chrome://monkeysphere/content/progress.gif");
         panel.hidden = false;
-        // hide the clearSite menu option
         document.getElementById("monkeysphere-status-clearSite").hidden = true;
         break;
       case 'VALID':
         icon.setAttribute("src", "chrome://monkeysphere/content/good.png");
         panel.hidden = false;
+        document.getElementById("monkeysphere-status-clearSite").hidden = false;
         break;
       case 'NOTVALID':
         icon.setAttribute("src", "chrome://monkeysphere/content/bad.png");
         panel.hidden = false;
-        // hide the clearSite menu option
         document.getElementById("monkeysphere-status-clearSite").hidden = true;
         break;
       case 'NEUTRAL':
@@ -179,7 +178,6 @@ var monkeysphere = (function() {
       case 'ERROR':
         icon.setAttribute("src", "chrome://monkeysphere/content/error.png");
         panel.hidden = false;
-        // hide the clearSite menu option
         document.getElementById("monkeysphere-status-clearSite").hidden = true;
         break;
     }
