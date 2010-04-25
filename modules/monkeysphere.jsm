@@ -17,10 +17,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-var EXPORTED_SYMBOLS = ["monkeysphere"];
-
-// Monkeysphere global namespace
-var monkeysphere = (function() {
+var EXPORTED_SYMBOLS = ["log",
+                        "getInvalidCert", 
+                        "overrides"
+                       ];
 
   ////////////////////////////////////////////////////////////
   // LOG FUNCTIONS
@@ -226,5 +226,4 @@ var monkeysphere = (function() {
         delete responses[apd.toOverrideLabel()];
       }
     };
-  });
-})();
+  })();
