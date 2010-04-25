@@ -1,5 +1,4 @@
 content monkeysphere chrome/content/
 locale monkeysphere en-US chrome/locale/en-US/
-
+resource monkeysphere modules/
 overlay	chrome://browser/content/browser.xul chrome://monkeysphere/content/monkeysphere.xul
-

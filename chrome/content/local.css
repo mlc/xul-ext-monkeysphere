@@ -1,11 +1,12 @@
 /* CSS for web.monkeysphere.info
 
-Copyright: 2008,2009
+Copyright: 2008,2009,2010
 
 Authors: 
-Dan Scott, 
+Dan Scott <danscott@riseup.net>,
+Micah Anderson <micah@riseup.net>,
 Daniel Kahn Gillmor <dkg@fifthhorseman.net>,
-Jameson Graef Rollins <jrollins@finestructure.net>,
+Jameson Rollins <jrollins@finestructure.net>,
 Jamie McClelland <jm@mayfirst.org>
 
 License: This stylesheet is licensed under the GNU GPL, version 3 or
@@ -19,22 +20,31 @@ The full text of the GPL can be found at:
 
 h1 {
   -moz-border-radius: 4px;
+  border: 2px solid #6F4B30;
   background-color: #B67B4E;
-  color: black;
+  color: #342316;
   display: block;
   font-weight: bold;
   padding: 0 0 0 10px;
-  font-size: 1.4em;
+  font-size: 1.7em;
 }
 
 h2 {
   -moz-border-radius: 4px;
+  border: 1px solid #6F4B30;
   background-color: #B67B4E;
-  color: black;
+  color: #342316;
   display: block;
+  font-size: 1.3em;
   font-weight: bold;
+  margin-top: 20px;
   padding: 0 0 0 10px;
-  font-size: 1.1em;
+}
+
+h3 {
+  padding: 0 0 0 10px;
+  color: #B07548;
+  font-size: 1em;
 }
 
 body {
@@ -78,7 +88,7 @@ pre {
 }
 
 table.sitenav {
-  border-bottom: 2px solid black;
+  border-bottom: 2px solid #6F4B30;
   padding: 0px;
   width: 100%;
   font-size: larger;
@@ -103,8 +113,11 @@ table.sitenav a {
 }
 
 table.sitenav span.selflink { 
+  -moz-border-radius: 2px;
+  border: 1px solid #6F4B30;
+  background-color: #B67B4E;
+  color: #342316;
   font-weight: bold;
-  text-decoration: underline;
   margin-right: 1em;
   font-variant: small-caps;
 }
@@ -127,8 +140,36 @@ div.actions {
   padding: 0;
 }
 
+# content {
+padding: 0 20px;
+}
+
 /* align main paragraphs to the right side of the monkey's finger */
 div#content > p { 
+  line-height: 22px;
   margin-left: 18px;
   margin-right: 5em;
 }
+
+/* only needed if we're doing footnotes... */
+sup {
+  font-size: 0.65em;
+  font-weight: bold;
+  vertical-align: text-top;
+}
+
+.footnotes {
+  margin-left: 18px;
+  margin-right: 5em;
+}
+
+/* FIXME: module needs to autogen these and put them in-line */
+#footnote-0:target {
+  background: #F6CBCE;
+}
+
+/* FIXME: yeah, this should not have to be here, sorry --mjg */
+#footnote-1:target {
+  background: #F6CBCE;
+}
+

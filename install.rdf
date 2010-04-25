@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
   <Description about="urn:mozilla:install-manifest">
     <em:id>tls-xul-ext@monkeysphere.info</em:id>
     <em:name>Monkeysphere</em:name>
-    <em:version>0.0.9</em:version>
+    <em:version>0.0.9.1</em:version>
     <em:type>2</em:type>
     <em:description>Consult Monkeysphere validation-agent for validation of x.509 certificates via the OpenPGP Web of Trust.
     </em:description>
@@ -32,14 +32,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     <em:contributor>Jameson Graef Rollins</em:contributor>
     <em:contributor>Daniel Kahn Gillmor</em:contributor>
     <em:homepageURL>http://web.monkeysphere.info/validation-agent/</em:homepageURL>
-    <em:iconURL>chrome://monkeysphere/content/logo.png</em:iconURL>
+    <em:iconURL>chrome://monkeysphere/content/logo-small.png</em:iconURL>
  
     <!-- Firefox -->
     <em:targetApplication>   
       <Description>
 	<em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
-	<em:minVersion>3.5.4</em:minVersion>
-	<em:maxVersion>3.5.*</em:maxVersion>
+	<em:minVersion>3.5</em:minVersion>
+	<em:maxVersion>3.6.*</em:maxVersion>
       </Description>
     </em:targetApplication>
 
