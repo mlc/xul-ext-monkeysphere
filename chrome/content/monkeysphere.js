@@ -40,7 +40,7 @@ var monkeysphere = (function() {
 
     // if uri not relevant, return
     if(!ms.isRelevantURI(uri)) {
-      setStatus(browser, 'NEUTRAL');
+      ms.setStatus(browser, 'NEUTRAL');
       return;
     }
 
@@ -57,9 +57,9 @@ var monkeysphere = (function() {
       var response = ms.overrides.response(apd);
 
       if ( typeof response === 'undefined' ) {
-        setStatus(browser, 'NEUTRAL');
+        ms.setStatus(browser, 'NEUTRAL');
       } else {
-        setStatus(browser, 'VALID', response.message);
+        ms.setStatus(browser, 'VALID', response.message);
       }
       return;
 
@@ -82,24 +82,6 @@ var monkeysphere = (function() {
     ms.log("querying agent...");
     queryAgent(browser, cert);
   };
-
-  //////////////////////////////////////////////////////////
-  // set site monkeysphere status
-  var setStatus = function(browser, state, message) {
-    if ( typeof message === 'undefined' ) {
-      message = '';
-    }
-    ms.log("set browser status: " + state + ', ' + message);
-    browser.monkeysphere = { state: state, message: message };
-  };
-
-  //////////////////////////////////////////////////////////
-  // clear site monkeysphere status for browser
-  var clearStatus = function(browser) {
-    ms.log("clear browser status");
-    delete browser.monkeysphere;
-  };
-
 
 ////////////////////////////////////////////////////////////
 // AGENT QUERY FUNCTIONS
@@ -139,7 +121,7 @@ var monkeysphere = (function() {
     ms.log("sending query...");
     client.send(query);
     ms.log("query sent");
-    setStatus(browser, 'INPROGRESS', messages.getString('statusINPROGRESS'));
+    ms.setStatus(browser, 'INPROGRESS', monkeysphere.messages.getString('statusINPROGRESS'));
   };
 
 ////////////////////////////////////////////////////////////
@@ -286,7 +268,7 @@ var monkeysphere = (function() {
           // VALID!
           ms.log("SITE VERIFIED!");
           ms.overrides.set(client.apd, response);
-          setStatus(browser, 'VALID', response.message);
+          ms.setStatus(browser, 'VALID', response.message);
 
           // reload page
           ms.log("reloading browser...");
@@ -296,13 +278,13 @@ var monkeysphere = (function() {
 
           // NOT VALID
           ms.log("site not verified.");
-          setStatus(browser, 'NOTVALID', response.message);
+          ms.setStatus(browser, 'NOTVALID', response.message);
 
         }
       } else {
         ms.log("validation agent did not respond.");
         //alert(monkeysphere.messages.getString("agentError"));
-        setStatus(browser, 'ERROR', messages.getString('noResponseFromAgent'));
+        ms.setStatus(browser, 'ERROR', monkeysphere.messages.getString('noResponseFromAgent'));
       }
 
       // update the current display, so that if we're looking at the
@@ -334,7 +316,7 @@ var monkeysphere = (function() {
       }
       var newstate = browser.monkeysphere.state;
       var newmessage = browser.monkeysphere.message + ' [NO LONGER CACHED]';
-      setStatus(browser, newstate, newmessage);
+      ms.setStatus(browser, newstate, newmessage);
       updateDisplay();
     },
 

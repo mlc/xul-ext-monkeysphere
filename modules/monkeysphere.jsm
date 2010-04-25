@@ -21,6 +21,7 @@ var EXPORTED_SYMBOLS = [
   "agent_socket",
   "log",
   "isRelevantURI",
+  "setStatus",
   "createAgentPostData",
   "getInvalidCert",
   "overrides"
@@ -128,6 +129,27 @@ var isRelevantURI = function(uri) {
 
   // if uri is relevant for monkeysphere return true
   return true;
+};
+
+////////////////////////////////////////////////////////////
+// STATUS FUNCTIONS
+////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////
+// set site monkeysphere status
+var setStatus = function(browser, state, message) {
+  if ( typeof message === 'undefined' ) {
+    message = "";
+  }
+  log("set browser status: " + state + ', ' + message);
+  browser.monkeysphere = { state: state, message: message };
+};
+
+//////////////////////////////////////////////////////////
+// clear site monkeysphere status for browser
+var clearStatus = function(browser) {
+  log("clear browser status");
+  delete browser.monkeysphere;
 };
 
 ////////////////////////////////////////////////////////////
@@ -344,4 +366,5 @@ var overrides = (
         delete responses[apd.toOverrideLabel()];
       }
     };
-})();
+  }
+)();
