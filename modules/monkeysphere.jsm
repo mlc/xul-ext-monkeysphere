@@ -1,4 +1,4 @@
-// Monkeysphere XUL extension
+// Monkeysphere XUL extension module
 // Copyright © 2010 Jameson Rollins <jrollins@finestructure.net>,
 //                  Daniel Kahn Gillmor <dkg@fifthhorseman.net>,
 //                  mike castleman <m@mlcastle.net>,
@@ -27,7 +27,11 @@ var EXPORTED_SYMBOLS = [
   "overrides"
 ];
 
-// preferences in about:config
+////////////////////////////////////////////////////////////
+// PREFERENCES AND ENVIRONMENT
+////////////////////////////////////////////////////////////
+
+// preferences, in about:config
 var prefs = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefService).getBranch("extensions.monkeysphere.");
 
 // select agent URL from environment variable or explicitly-set preference.
