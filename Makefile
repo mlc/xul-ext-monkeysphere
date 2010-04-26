@@ -13,7 +13,10 @@ monkeysphere.xpi: $(XPI_CONTENTS)
 debian-package:
 	git buildpackage -uc -us
 
+publish: monkeysphere.xpi
+	scp $< archivemaster@george.riseup.net:/srv/archive.monkeysphere.info/xul-ext/
+
 clean:
 	rm -f monkeysphere.xpi
 
-.PHONY: clean debian-package
+.PHONY: clean debian-package publish
