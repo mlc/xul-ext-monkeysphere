@@ -1,8 +1,12 @@
 xul-ext-monkeysphere (0.2~pre) UNRELEASED; urgency=low
 
+  [ Daniel Kahn Gillmor ]
   * corrected 0.1 changelog.
 
- -- Daniel Kahn Gillmor <dkg@fifthhorseman.net>  Sun, 25 Apr 2010 23:56:09 -0400
+  [ Jameson Rollins ]
+  * fix makefile to include modules directory
+
+ -- Jameson Rollins <jrollins@finestructure.net>  Mon, 26 Apr 2010 08:13:20 -0400
 
 xul-ext-monkeysphere (0.1); urgency=low
 
