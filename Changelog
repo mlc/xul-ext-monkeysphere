@@ -1,6 +1,17 @@
-xul-ext-monkeysphere (0.1~pre) UNRELEASED; urgency=low
+xul-ext-monkeysphere (0.2); urgency=low
 
-  * first release
+  [ Daniel Kahn Gillmor ]
+  * corrected 0.1 changelog.
 
- -- Jameson Rollins <jrollins@finestructure.net>  Mon, 08 Mar 2010 00:43:12 -0500
+  [ Jameson Rollins ]
+  * fix Makefile to include modules directory
+
+ -- Jameson Rollins <jrollins@finestructure.net>  Mon, 26 Apr 2010 08:13:20 -0400
+
+xul-ext-monkeysphere (0.1); urgency=low
+
+  * first release.
+
+ -- Jameson Rollins <jrollins@finestructure.net>  Sun, 25 Apr 2010 23:40:00 -0400
+
 
