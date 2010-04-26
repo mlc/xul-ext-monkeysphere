@@ -1,10 +1,10 @@
-xul-ext-monkeysphere (0.2~pre) UNRELEASED; urgency=low
+xul-ext-monkeysphere (0.2); urgency=low
 
   [ Daniel Kahn Gillmor ]
   * corrected 0.1 changelog.
 
   [ Jameson Rollins ]
-  * fix makefile to include modules directory
+  * fix Makefile to include modules directory
 
  -- Jameson Rollins <jrollins@finestructure.net>  Mon, 26 Apr 2010 08:13:20 -0400
 
