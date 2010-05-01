@@ -162,12 +162,12 @@ var monkeysphere = (function() {
         document.getElementById("monkeysphere-status-clearSite").hidden = true;
         break;
       case 'VALID':
-        icon.setAttribute("src", "chrome://monkeysphere/content/good.png");
+        icon.setAttribute("src", "chrome://monkeysphere/content/monkey.png");
         panel.hidden = false;
         document.getElementById("monkeysphere-status-clearSite").hidden = false;
         break;
       case 'CLEARED':
-        icon.setAttribute("src", "chrome://monkeysphere/content/good.png");
+        icon.setAttribute("src", "chrome://monkeysphere/content/monkey.png");
         panel.hidden = false;
         document.getElementById("monkeysphere-status-clearSite").hidden = true;
         break;
