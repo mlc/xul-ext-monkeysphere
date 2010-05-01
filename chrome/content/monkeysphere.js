@@ -309,7 +309,6 @@ var monkeysphere = (function() {
           }
         } else {
           ms.log("validation agent did not respond.");
-          //alert(monkeysphere.messages.getString("agentError"));
           ms.setStatus(browser, 'ERROR', monkeysphere.messages.getString('noResponseFromAgent'));
         }
 
