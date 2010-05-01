@@ -319,9 +319,8 @@ var monkeysphere = (function() {
         var apd = ms.createAgentPostData(uri, cert);
         apd.log();
         ms.overrides.clear(apd);
-        // FIXME: why does the override seem to persist after a clear?
-        // this is a pretty big problem
-        if(!ms.overrides.certStatus(apd)) {
+        if(ms.overrides.certStatus(apd)) {
+          ms.log("**** WARNING: override cert not cleared ****");
           alert('Monkeysphere error: override cert not cleared!');
         }
         var newstate = "CLEARED";
