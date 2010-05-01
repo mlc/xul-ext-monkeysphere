@@ -7,7 +7,7 @@
 
 XPI_CONTENTS:=$(shell find chrome modules defaults -name "*.html" -o -name "*.css" -o -name "*.png" -o -name "*.gif" -o -name "*.js" -o -name "*.jsm" -o -name "*.dtd" -o -name "*.xul" -o -name "messages") chrome.manifest install.rdf COPYING
 
-ICONS = $(addprefix chrome/content/, bad.png error.png)
+ICONS = $(addprefix chrome/content/, broken.png bad.png error.png)
 icons: $(ICONS)
 %.png: %.svg
 	inkscape --export-png $@ --export-area-page --export-background-opacity=0 $<

@@ -63,6 +63,28 @@ var monkeysphere = (function() {
       }
       return;
 
+    } else if(state & Components.interfaces.nsIWebProgressListener.STATE_IS_BROKEN) {
+      ms.log("  site state BROKEN");
+
+      // if a monkeysphere-generated cert override is being used by this connection, then we should be setting the status from the override
+      try {
+        var cert = browser.securityUI.SSLStatus.serverCert;
+      } catch(e) {
+        ms.log("no cert found");
+        return;
+      }
+      var apd = ms.createAgentPostData(uri, cert);
+      var response = ms.overrides.response(apd);
+
+      if ( typeof response === 'undefined' ) {
+        ms.setStatus(browser, 'NEUTRAL');
+      } else {
+        // modify the message to indicate that it's only partially validated
+        var newmessage = response.message + ' [Warning: contains non-monkeysphere validated content]';
+        ms.setStatus(browser, 'BROKEN', newmessage);
+      }
+      return;
+
     // if site insecure continue
     } else if(state & Components.interfaces.nsIWebProgressListener.STATE_IS_INSECURE) {
       ms.log("  site state INSECURE");
@@ -163,6 +185,11 @@ var monkeysphere = (function() {
         break;
       case 'VALID':
         icon.setAttribute("src", "chrome://monkeysphere/content/monkey.png");
+        panel.hidden = false;
+        document.getElementById("monkeysphere-status-clearSite").hidden = false;
+        break;
+      case 'BROKEN':
+        icon.setAttribute("src", "chrome://monkeysphere/content/broken.png");
         panel.hidden = false;
         document.getElementById("monkeysphere-status-clearSite").hidden = false;
         break;
