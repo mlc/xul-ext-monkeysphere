@@ -255,34 +255,26 @@ var monkeysphere = (function() {
         ms.log("++++ PL location change: " + aLocation.prePath);
         updateDisplay();
       },
-
-      onProgressChange: function() {},
-      onSecurityChange: function() {},
+      onProgressChange: function(aWebProgress, aRequest, aCurSelfProgress, aMaxSelfProgress, aCurTotalProgress, aMaxTotalProgress) {},
+      onSecurityChange: function(aWebProgress, aRequest, aState) {},
       onStateChange: function(aWebProgress, aRequest, aStateFlags, aStatus) {},
       onStatusChange: function(aWebProgress, aRequest, aStatus, aMessage) {}
     },
 
     // https://developer.mozilla.org/en/Listening_to_events_on_all_tabs
     tabProgressListener: {
+      onLocationChange: function(aBrowser, aWebProgress, aRequest, aLocation) {},
+      onProgressChange: function(aBrowser, awebProgress, aRequest, curSelfProgress, maxSelfProgress, curTotalProgress, maxTotalProgress) {},
       onSecurityChange: function(aBrowser, aWebProgress, aRequest, aState) {
         ms.log("++++ tabPL security change: ");
         checkSite(aBrowser, aState);
         updateDisplay();
       },
-
-      onLocationChange: function(aBrowser, aWebProgress, aRequest, aLocation) {
-        //ms.log("++++ tabPL location change: " + aLocation.prePath);
-      },
-      onProgressChange: function(aBrowser, awebProgress, aRequest, curSelfProgress, maxSelfProgress, curTotalProgress, maxTotalProgress) {
-        //ms.log("++++ tabPL progress change: " + curSelfProgress);
-      },
       onStateChange: function(aBrowser, aWebProgress, aRequest, aStateFlags, aStatus) {
         ms.log("++++ tabPL state change: " + aRequest);
         updateDisplay();
       },
-      onStatusChange: function(aBrowser, aWebProgress, aRequest, aStatus, aMessage) {
-        //ms.log("++++ tabPL status change: " + aRequest);
-      }
+      onStatusChange: function(aBrowser, aWebProgress, aRequest, aStatus, aMessage) {}
     },
 
     ////////////////////////////////////////////////////////
