@@ -166,6 +166,11 @@ var monkeysphere = (function() {
         panel.hidden = false;
         document.getElementById("monkeysphere-status-clearSite").hidden = false;
         break;
+      case 'CLEARED':
+        icon.setAttribute("src", "chrome://monkeysphere/content/good.png");
+        panel.hidden = false;
+        document.getElementById("monkeysphere-status-clearSite").hidden = true;
+        break;
       case 'NOTVALID':
         icon.setAttribute("src", "chrome://monkeysphere/content/bad.png");
         panel.hidden = false;
@@ -302,21 +307,24 @@ var monkeysphere = (function() {
     contextMenuFunctions: {
 
       clearSite: function() {
+        ms.log("context menu function: clearSite");
         var browser = gBrowser.selectedBrowser;
         var uri = browser.currentURI;
         try {
           var cert = browser.securityUI.SSLStatus.serverCert;
         } catch(e) {
-          ms.log("no valid cert found?");
+          ms.log("no valid cert found?  probably already cleared.");
           return;
         }
         var apd = ms.createAgentPostData(uri, cert);
+        apd.log();
         ms.overrides.clear(apd);
         // FIXME: why does the override seem to persist after a clear?
+        // this is a pretty big problem
         if(!ms.overrides.certStatus(apd)) {
-          alert('Monkeysphere: site clear error.  Is override cert cleared?');
+          alert('Monkeysphere error: override cert not cleared!');
         }
-        var newstate = browser.monkeysphere.state;
+        var newstate = "CLEARED";
         var newmessage = browser.monkeysphere.message + ' [NO LONGER CACHED]';
         ms.setStatus(browser, newstate, newmessage);
         updateDisplay();
@@ -327,6 +335,7 @@ var monkeysphere = (function() {
       },
 
       help: function() {
+        ms.log("context menu function: help");
         gBrowser.loadOneTab("chrome://monkeysphere/locale/help.html",
         null, null, null, false);
       }

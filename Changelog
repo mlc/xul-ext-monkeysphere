@@ -1,3 +1,9 @@
+xul-ext-monkeysphere (0.3~pre) unstable; urgency=low
+
+  * Fix clearSite status menu function **NOT FIXED YET**
+
+ -- Jameson Rollins <jrollins@finestructure.net>  Thu, 29 Apr 2010 12:39:57 -0400
+
 xul-ext-monkeysphere (0.2); urgency=low
 
   [ Daniel Kahn Gillmor ]
