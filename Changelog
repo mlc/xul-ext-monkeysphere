@@ -1,9 +1,10 @@
 xul-ext-monkeysphere (0.3~pre) unstable; urgency=low
 
   * Fix clearSite status menu function
-  * generate icon pngs from svg source
+  * generate icon pngs from svg source (closes #2012)
+  * add BROKEN security state handling (closes #2217)
 
- -- Jameson Rollins <jrollins@finestructure.net>  Sat, 01 May 2010 18:03:22 -0400
+ -- Jameson Rollins <jrollins@finestructure.net>  Sat, 01 May 2010 19:33:33 -0400
 
 xul-ext-monkeysphere (0.2); urgency=low
 
