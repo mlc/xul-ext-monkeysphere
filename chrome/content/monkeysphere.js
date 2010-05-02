@@ -182,26 +182,31 @@ var monkeysphere = (function() {
         icon.setAttribute("src", "chrome://monkeysphere/content/progress.gif");
         panel.hidden = false;
         document.getElementById("monkeysphere-status-clearSite").hidden = true;
+        document.getElementById("monkeysphere-status-showCache").hidden = true;
         break;
       case 'VALID':
         icon.setAttribute("src", "chrome://monkeysphere/content/monkey.png");
         panel.hidden = false;
         document.getElementById("monkeysphere-status-clearSite").hidden = false;
+        document.getElementById("monkeysphere-status-showCache").hidden = false;
         break;
       case 'BROKEN':
         icon.setAttribute("src", "chrome://monkeysphere/content/broken.png");
         panel.hidden = false;
         document.getElementById("monkeysphere-status-clearSite").hidden = false;
+        document.getElementById("monkeysphere-status-showCache").hidden = false;
         break;
       case 'CLEARED':
         icon.setAttribute("src", "chrome://monkeysphere/content/monkey.png");
         panel.hidden = false;
         document.getElementById("monkeysphere-status-clearSite").hidden = true;
+        document.getElementById("monkeysphere-status-showCache").hidden = true;
         break;
       case 'NOTVALID':
         icon.setAttribute("src", "chrome://monkeysphere/content/bad.png");
         panel.hidden = false;
         document.getElementById("monkeysphere-status-clearSite").hidden = true;
+        document.getElementById("monkeysphere-status-showCache").hidden = true;
         break;
       case 'NEUTRAL':
         icon.setAttribute("src", "");
@@ -211,6 +216,7 @@ var monkeysphere = (function() {
         icon.setAttribute("src", "chrome://monkeysphere/content/error.png");
         panel.hidden = false;
         document.getElementById("monkeysphere-status-clearSite").hidden = true;
+        document.getElementById("monkeysphere-status-showCache").hidden = true;
         break;
     }
 
@@ -331,7 +337,7 @@ var monkeysphere = (function() {
         try {
           var cert = browser.securityUI.SSLStatus.serverCert;
         } catch(e) {
-          ms.log("no valid cert found?  probably already cleared.");
+          ms.log("no valid cert found?  probably already cleared?");
           return;
         }
         var apd = ms.createAgentPostData(uri, cert);
@@ -345,6 +351,27 @@ var monkeysphere = (function() {
         var newmessage = browser.monkeysphere.message + ' [NO LONGER CACHED]';
         ms.setStatus(browser, newstate, newmessage);
         updateDisplay();
+      },
+
+      showCache: function() {
+        ms.log("context menu function: showCache");
+        var browser = gBrowser.selectedBrowser;
+        var uri = browser.currentURI;
+        try {
+          var cert = browser.securityUI.SSLStatus.serverCert;
+        } catch(e) {
+          ms.log("no valid cert found?  probably already cleared?");
+          return;
+        }
+        var apd = ms.createAgentPostData(uri, cert);
+
+        var string = "Monkeysphere cache information:\n\n";
+        string += "context: " + apd.data.context + "\n";
+        string += "peer: " + apd.data.peer + "\n";
+        string += "pkc type: " + apd.data.pkc.type + "\n";
+        string += "agent response: " + ms.overrides.response(apd).message + "\n";
+
+        alert(string);
       },
 
       certs: function() {
