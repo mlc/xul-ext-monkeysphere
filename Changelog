@@ -1,3 +1,9 @@
+xul-ext-monkeysphere (0.4); urgency=low
+
+  * auto-generate install.rdf to ensure proper version numbers.
+
+ -- Daniel Kahn Gillmor <dkg@fifthhorseman.net>  Wed, 05 May 2010 12:54:14 -0400
+
 xul-ext-monkeysphere (0.3); urgency=low
 
   * Fix clearSite status menu function
