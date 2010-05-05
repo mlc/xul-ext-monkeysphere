@@ -9,8 +9,13 @@ XPI_CONTENTS:=$(shell find chrome modules defaults -name "*.html" -o -name "*.cs
 
 ICONS = $(addprefix chrome/content/, broken.png bad.png error.png)
 
+VERSION = $(shell head -n1 Changelog | sed -e 's/^.*(//' -e 's/).*$$//')
+
 monkeysphere.xpi: $(XPI_CONTENTS) $(ICONS)
 	zip $@ $(XPI_CONTENTS) $(ICONS)
+
+install.rdf: install.rdf.template Changelog
+	sed 's/__VERSION__/$(VERSION)/' < $< > $@
 
 icons: $(ICONS)
 %.png: %.svg
@@ -25,5 +30,6 @@ publish: monkeysphere.xpi
 clean:
 	rm -f $(ICONS)
 	rm -f monkeysphere.xpi
+	rm -f install.rdf
 
 .PHONY: clean icons debian-package publish
