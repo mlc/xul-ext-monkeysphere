@@ -1,3 +1,10 @@
+xul-ext-monkeysphere (0.3-2~pre) UNRELEASED; urgency=low
+
+  * added build-dep on texlive-fonts-recommended for the font used during
+    icon generation (needed by inkscape).
+
+ -- Daniel Kahn Gillmor <dkg@fifthhorseman.net>  Wed, 05 May 2010 09:39:43 -0400
+
 xul-ext-monkeysphere (0.3-1) unstable; urgency=low
 
   * New Upstream Release.

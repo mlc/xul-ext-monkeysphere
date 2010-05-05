@@ -7,7 +7,8 @@ DM-Upload-Allowed: yes
 Standards-Version: 3.8.4
 Build-Depends: debhelper (>= 7.0.50~),
  mozilla-devscripts (>= 0.19~),
- inkscape
+ inkscape,
+ texlive-fonts-recommended
 Homepage: http://web.monkeysphere.info/
 Vcs-Git: git://git.monkeysphere.info/xul-ext-monkeysphere
 
