@@ -63,6 +63,28 @@ var monkeysphere = (function() {
       }
       return;
 
+    } else if(state & Components.interfaces.nsIWebProgressListener.STATE_IS_BROKEN) {
+      ms.log("  site state BROKEN");
+
+      // if a monkeysphere-generated cert override is being used by this connection, then we should be setting the status from the override
+      try {
+        var cert = browser.securityUI.SSLStatus.serverCert;
+      } catch(e) {
+        ms.log("no cert found");
+        return;
+      }
+      var apd = ms.createAgentPostData(uri, cert);
+      var response = ms.overrides.response(apd);
+
+      if ( typeof response === 'undefined' ) {
+        ms.setStatus(browser, 'NEUTRAL');
+      } else {
+        // modify the message to indicate that it's only partially validated
+        var newmessage = response.message + ' [Warning: contains non-monkeysphere validated content]';
+        ms.setStatus(browser, 'BROKEN', newmessage);
+      }
+      return;
+
     // if site insecure continue
     } else if(state & Components.interfaces.nsIWebProgressListener.STATE_IS_INSECURE) {
       ms.log("  site state INSECURE");
@@ -160,16 +182,31 @@ var monkeysphere = (function() {
         icon.setAttribute("src", "chrome://monkeysphere/content/progress.gif");
         panel.hidden = false;
         document.getElementById("monkeysphere-status-clearSite").hidden = true;
+        document.getElementById("monkeysphere-status-showCache").hidden = true;
         break;
       case 'VALID':
-        icon.setAttribute("src", "chrome://monkeysphere/content/good.png");
+        icon.setAttribute("src", "chrome://monkeysphere/content/monkey.png");
         panel.hidden = false;
         document.getElementById("monkeysphere-status-clearSite").hidden = false;
+        document.getElementById("monkeysphere-status-showCache").hidden = false;
+        break;
+      case 'BROKEN':
+        icon.setAttribute("src", "chrome://monkeysphere/content/broken.png");
+        panel.hidden = false;
+        document.getElementById("monkeysphere-status-clearSite").hidden = false;
+        document.getElementById("monkeysphere-status-showCache").hidden = false;
+        break;
+      case 'CLEARED':
+        icon.setAttribute("src", "chrome://monkeysphere/content/monkey.png");
+        panel.hidden = false;
+        document.getElementById("monkeysphere-status-clearSite").hidden = true;
+        document.getElementById("monkeysphere-status-showCache").hidden = true;
         break;
       case 'NOTVALID':
         icon.setAttribute("src", "chrome://monkeysphere/content/bad.png");
         panel.hidden = false;
         document.getElementById("monkeysphere-status-clearSite").hidden = true;
+        document.getElementById("monkeysphere-status-showCache").hidden = true;
         break;
       case 'NEUTRAL':
         icon.setAttribute("src", "");
@@ -179,6 +216,7 @@ var monkeysphere = (function() {
         icon.setAttribute("src", "chrome://monkeysphere/content/error.png");
         panel.hidden = false;
         document.getElementById("monkeysphere-status-clearSite").hidden = true;
+        document.getElementById("monkeysphere-status-showCache").hidden = true;
         break;
     }
 
@@ -223,34 +261,26 @@ var monkeysphere = (function() {
         ms.log("++++ PL location change: " + aLocation.prePath);
         updateDisplay();
       },
-
-      onProgressChange: function() {},
-      onSecurityChange: function() {},
+      onProgressChange: function(aWebProgress, aRequest, aCurSelfProgress, aMaxSelfProgress, aCurTotalProgress, aMaxTotalProgress) {},
+      onSecurityChange: function(aWebProgress, aRequest, aState) {},
       onStateChange: function(aWebProgress, aRequest, aStateFlags, aStatus) {},
       onStatusChange: function(aWebProgress, aRequest, aStatus, aMessage) {}
     },
 
     // https://developer.mozilla.org/en/Listening_to_events_on_all_tabs
     tabProgressListener: {
+      onLocationChange: function(aBrowser, aWebProgress, aRequest, aLocation) {},
+      onProgressChange: function(aBrowser, awebProgress, aRequest, curSelfProgress, maxSelfProgress, curTotalProgress, maxTotalProgress) {},
       onSecurityChange: function(aBrowser, aWebProgress, aRequest, aState) {
         ms.log("++++ tabPL security change: ");
         checkSite(aBrowser, aState);
         updateDisplay();
       },
-
-      onLocationChange: function(aBrowser, aWebProgress, aRequest, aLocation) {
-        //ms.log("++++ tabPL location change: " + aLocation.prePath);
-      },
-      onProgressChange: function(aBrowser, awebProgress, aRequest, curSelfProgress, maxSelfProgress, curTotalProgress, maxTotalProgress) {
-        //ms.log("++++ tabPL progress change: " + curSelfProgress);
-      },
       onStateChange: function(aBrowser, aWebProgress, aRequest, aStateFlags, aStatus) {
         ms.log("++++ tabPL state change: " + aRequest);
         updateDisplay();
       },
-      onStatusChange: function(aBrowser, aWebProgress, aRequest, aStatus, aMessage) {
-        //ms.log("++++ tabPL status change: " + aRequest);
-      }
+      onStatusChange: function(aBrowser, aWebProgress, aRequest, aStatus, aMessage) {}
     },
 
     ////////////////////////////////////////////////////////
@@ -285,7 +315,6 @@ var monkeysphere = (function() {
           }
         } else {
           ms.log("validation agent did not respond.");
-          //alert(monkeysphere.messages.getString("agentError"));
           ms.setStatus(browser, 'ERROR', monkeysphere.messages.getString('noResponseFromAgent'));
         }
 
@@ -302,24 +331,47 @@ var monkeysphere = (function() {
     contextMenuFunctions: {
 
       clearSite: function() {
+        ms.log("context menu function: clearSite");
         var browser = gBrowser.selectedBrowser;
         var uri = browser.currentURI;
         try {
           var cert = browser.securityUI.SSLStatus.serverCert;
         } catch(e) {
-          ms.log("no valid cert found?");
+          ms.log("no valid cert found?  probably already cleared?");
           return;
         }
         var apd = ms.createAgentPostData(uri, cert);
+        apd.log();
         ms.overrides.clear(apd);
-        // FIXME: why does the override seem to persist after a clear?
-        if(!ms.overrides.certStatus(apd)) {
-          alert('Monkeysphere: site clear error.  Is override cert cleared?');
+        if(ms.overrides.certStatus(apd)) {
+          ms.log("**** WARNING: override cert not cleared ****");
+          alert('Monkeysphere error: override cert not cleared!');
         }
-        var newstate = browser.monkeysphere.state;
+        var newstate = "CLEARED";
         var newmessage = browser.monkeysphere.message + ' [NO LONGER CACHED]';
         ms.setStatus(browser, newstate, newmessage);
         updateDisplay();
+      },
+
+      showCache: function() {
+        ms.log("context menu function: showCache");
+        var browser = gBrowser.selectedBrowser;
+        var uri = browser.currentURI;
+        try {
+          var cert = browser.securityUI.SSLStatus.serverCert;
+        } catch(e) {
+          ms.log("no valid cert found?  probably already cleared?");
+          return;
+        }
+        var apd = ms.createAgentPostData(uri, cert);
+
+        var string = "Monkeysphere cache information:\n\n";
+        string += "context: " + apd.data.context + "\n";
+        string += "peer: " + apd.data.peer + "\n";
+        string += "pkc type: " + apd.data.pkc.type + "\n";
+        string += "agent response: " + ms.overrides.response(apd).message + "\n";
+
+        alert(string);
       },
 
       certs: function() {
@@ -327,6 +379,7 @@ var monkeysphere = (function() {
       },
 
       help: function() {
+        ms.log("context menu function: help");
         gBrowser.loadOneTab("chrome://monkeysphere/locale/help.html",
         null, null, null, false);
       }

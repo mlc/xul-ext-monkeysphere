@@ -15,8 +15,7 @@
    inkscape:version="0.47 r22583"
    width="16"
    height="16"
-   sodipodi:docname="bad.svg"
-   inkscape:export-filename="/home/jrollins/cmrg/monkeysphere/msva/git/xul-ext/chrome/content/error.png"
+   sodipodi:docname="broken.svg"
    inkscape:export-xdpi="90"
    inkscape:export-ydpi="90">
   <metadata
@@ -27,7 +26,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -54,6 +53,20 @@
        inkscape:vp_y="0 : 1000 : 0"
        inkscape:vp_x="0 : 0.5 : 1"
        sodipodi:type="inkscape:persp3d" />
+    <inkscape:perspective
+       id="perspective3597"
+       inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
+       inkscape:vp_z="1 : 0.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 0.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
+    <inkscape:perspective
+       id="perspective3700"
+       inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
+       inkscape:vp_z="1 : 0.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 0.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
   </defs>
   <sodipodi:namedview
      pagecolor="#ffffff"
@@ -68,24 +81,45 @@
      inkscape:window-height="734"
      id="namedview2896"
      showgrid="false"
-     inkscape:zoom="23.864854"
-     inkscape:cx="6.9422309"
+     inkscape:zoom="22.627417"
+     inkscape:cx="5.5718841"
      inkscape:cy="7.7182552"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="0"
-     inkscape:current-layer="svg2894"
+     inkscape:current-layer="g3611"
      showborder="true"
-     inkscape:showpageshadow="false" />
+     inkscape:showpageshadow="false"
+     borderlayer="false" />
   <image
-     y="0"
-     x="0"
-     id="image4287"
-     height="16"
+     sodipodi:absref="monkey.png"
+     xlink:href="monkey.png"
      width="16"
-     xlink:href="monkey.png" />
-  <path
-     id="path3692"
-     style="fill:none;stroke:#ff1900;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
-     d="M 3,13 13,3 m 2.034203,5.0000001 c 0,3.8848829 -3.14932,7.0342029 -7.0342029,7.0342029 -3.884883,0 -7.03420276,-3.14932 -7.03420276,-7.0342029 0,-3.8848828 3.14931976,-7.03420248 7.03420276,-7.03420248 3.8848829,0 7.0342029,3.14931968 7.0342029,7.03420248 z" />
+     height="16"
+     id="image4287"
+     x="0"
+     y="0" />
+  <g
+     id="g3611"
+     transform="matrix(1.1079805,0,0,1.1079805,-0.65760376,-1.7120845)">
+    <path
+       sodipodi:nodetypes="csssc"
+       d="m 15.034203,8.765573 c 0,2.357499 -1.911131,4.26863 -4.26863,4.26863 -2.3574987,0 -4.2686292,-1.911131 -4.2686292,-4.26863 0,-2.3574986 1.9111305,-4.268629 4.2686292,-4.268629 2.357499,0 4.26863,1.9111304 4.26863,4.268629 z"
+       style="fill:#ff3520;fill-opacity:1;stroke:#dc0000;stroke-opacity:1;stroke-width:0.27076289;stroke-miterlimit:4;stroke-dasharray:none"
+       id="path3692" />
+    <rect
+       y="5.4019003"
+       x="9.7808619"
+       height="4.1487823"
+       width="1.9694234"
+       id="rect3587"
+       style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none" />
+    <rect
+       y="10.836352"
+       x="9.7808619"
+       height="0.98391497"
+       width="1.9694234"
+       id="rect3587-9"
+       style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none" />
+  </g>
 </svg>

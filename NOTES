@@ -33,3 +33,30 @@ certificateerror shows up:
 XML Parsing error: no element found
 Location: jar:file:///usr/lib/iceweasel/chrome/browser.jar!/content/browser/certerror/aboutCertError.xhtml
 Line number: 1, Column: 1
+
+
+2010-04-25 (times are America/New_York), in irc.mozilla.org#extdev:
+-------------------------------------------------------------------
+22:58 < dkg> Callek: is a JS component different from a JS module?
+22:58  * dkg is unclear on the terminology
+22:58 < Callek> dkg: yes
+22:58 < dkg> can you point me to an explanation of the difference?
+23:04 < Callek> dkg: I don't know of any docs specifically saying the differences
+23:04 < Callek> dkg: but a jsm is available to USE from startup on, but a component is _like_ a jsm, BUT is XPCOM, as in, its independant of any windows, and runs 
+                (typically) from app startup to app end
+23:05 < Callek> dkg: whereas a jsm is never invoked unless SOMETHING, SOMEWHERE explicitly invokes it, a component initialises during startup
+23:05 < Callek> dkg: of course, a component won't have access to gBrowser, FUEL, etc. and is much harder (more convoluted) to even attempt to open a window or do 
+                anything like that
+23:06 < Callek> dkg: not impossible (for the most part) but much harder.
+23:08 < Callek> dkg: does that help?
+23:09 < dkg> yes, i think so.
+23:09 < dkg> i think our approach right now (a module, loaded by chrome)
+23:09 < dkg> should be fine
+23:09 < dkg> since it turns out to be pretty simple to do.
+23:10 < dkg> i need to read more about what it takes to make a pure-js component, in particular what else is needed beyond what we're doing with our module.
+23:12 < dkg> Callek: any pointers to docs about pure-js components?
+23:12 < Callek> dkg: https://developer.mozilla.org/en/How_to_Build_an_XPCOM_Component_in_Javascript
+23:12 < dkg> sweet, thanks.
+23:13 < Callek> dkg: there MAY be some parts you can skip, depending on your needs
+23:13 < dkg> between that and https://developer.mozilla.org/en/JavaScript_code_modules/XPCOMUtils.jsm, i should be able to see what the component-based approach is
+23:14 < dkg> and hopefully compare that with the all-module approach we're using now.

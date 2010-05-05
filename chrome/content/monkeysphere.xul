@@ -54,6 +54,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         <menuitem id="monkeysphere-status-clearSite"
                   label="Clear site Monkeysphere exception"
 		  oncommand="monkeysphere.contextMenuFunctions.clearSite()" />
+        <menuitem id="monkeysphere-status-showCache"
+                  label="Show exception information"
+		  oncommand="monkeysphere.contextMenuFunctions.showCache()" />
 	<menuitem id="monkeysphere-status-help"
                   label="Help"
 		  oncommand="monkeysphere.contextMenuFunctions.help()" />
