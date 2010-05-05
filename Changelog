@@ -1,4 +1,4 @@
-xul-ext-monkeysphere (0.3~pre) unstable; urgency=low
+xul-ext-monkeysphere (0.3); urgency=low
 
   * Fix clearSite status menu function
   * generate icon pngs from svg source (closes #2012)
