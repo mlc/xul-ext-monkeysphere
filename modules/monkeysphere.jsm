@@ -1,3 +1,4 @@
+// -*-js2-*-
 // Monkeysphere XUL extension module
 // Copyright © 2010 Jameson Rollins <jrollins@finestructure.net>,
 //                  Daniel Kahn Gillmor <dkg@fifthhorseman.net>,
