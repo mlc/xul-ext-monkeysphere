@@ -258,7 +258,7 @@ var monkeysphere = (function() {
     // https://developer.mozilla.org/en/nsIWebProgressListener
     progressListener: {
       onLocationChange: function(aWebProgress, aRequest, aLocation) {
-        ms.log("++++ PL location change: " + aLocation.prePath);
+        ms.log("++++ PL location change");
         updateDisplay();
       },
       onProgressChange: function(aWebProgress, aRequest, aCurSelfProgress, aMaxSelfProgress, aCurTotalProgress, aMaxTotalProgress) {},
