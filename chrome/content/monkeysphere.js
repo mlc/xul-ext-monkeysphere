@@ -39,6 +39,7 @@ var monkeysphere = (function() {
     var uri = browser.currentURI;
 
     // if uri not relevant, return
+    // FIXME: should we be doing this check here?  this is triggered by a security state change.  Does it matter if the url is not https?
     if(!ms.isRelevantURI(uri)) {
       ms.setStatus(browser, 'NEUTRAL');
       return;
