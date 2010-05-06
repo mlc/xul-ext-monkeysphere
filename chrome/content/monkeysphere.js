@@ -258,7 +258,7 @@ var monkeysphere = (function() {
     // https://developer.mozilla.org/en/nsIWebProgressListener
     progressListener: {
       onLocationChange: function(aWebProgress, aRequest, aLocation) {
-        ms.log("++++ PL location change: " + aLocation.prePath);
+        ms.log("++++ PL location change ++++");
         updateDisplay();
       },
       onProgressChange: function(aWebProgress, aRequest, aCurSelfProgress, aMaxSelfProgress, aCurTotalProgress, aMaxTotalProgress) {},
@@ -272,12 +272,12 @@ var monkeysphere = (function() {
       onLocationChange: function(aBrowser, aWebProgress, aRequest, aLocation) {},
       onProgressChange: function(aBrowser, awebProgress, aRequest, curSelfProgress, maxSelfProgress, curTotalProgress, maxTotalProgress) {},
       onSecurityChange: function(aBrowser, aWebProgress, aRequest, aState) {
-        ms.log("++++ tabPL security change: " + aState);
+        ms.log("++++ tabPL security change: " + aState + " ++++");
         checkSite(aBrowser, aState);
         updateDisplay();
       },
       onStateChange: function(aBrowser, aWebProgress, aRequest, aStateFlags, aStatus) {
-        ms.log("++++ tabPL state change: " + aStateFlags);
+        ms.log("++++ tabPL state change: " + aStateFlags + " ++++");
         updateDisplay();
       },
       onStatusChange: function(aBrowser, aWebProgress, aRequest, aStatus, aMessage) {}
