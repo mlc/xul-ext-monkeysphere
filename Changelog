@@ -1,3 +1,9 @@
+xul-ext-monkeysphere (0.5~pre) unstable; urgency=low
+
+  * code cleanup
+
+ -- Jameson Rollins <jrollins@finestructure.net>  Thu, 06 May 2010 08:20:15 -0400
+
 xul-ext-monkeysphere (0.4); urgency=low
 
   * auto-generate install.rdf to ensure proper version numbers.

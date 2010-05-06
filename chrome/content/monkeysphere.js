@@ -34,11 +34,12 @@ var monkeysphere = (function() {
   //////////////////////////////////////////////////////////
   // check site monkeysphere status
   var checkSite = function(browser, state) {
-    ms.log("check site:");
+    ms.log("%%%% checking site %%%%");
 
     var uri = browser.currentURI;
 
     // if uri not relevant, return
+    // FIXME: should we be doing this check here?  this is triggered by a security state change.  Does it matter if the url is not https?
     if(!ms.isRelevantURI(uri)) {
       ms.setStatus(browser, 'NEUTRAL');
       return;
@@ -46,10 +47,9 @@ var monkeysphere = (function() {
 
     ////////////////////////////////////////
     // check browser state
-    ms.log("checking security state: " + state);
     // if site secure...
     if(state & Components.interfaces.nsIWebProgressListener.STATE_IS_SECURE) {
-      ms.log("  site state SECURE.");
+      ms.log("security state: SECURE.");
 
       // if a monkeysphere-generated cert override is being used by this connection, then we should be setting the status from the override
       var cert = browser.securityUI.SSLStatus.serverCert;
@@ -64,7 +64,7 @@ var monkeysphere = (function() {
       return;
 
     } else if(state & Components.interfaces.nsIWebProgressListener.STATE_IS_BROKEN) {
-      ms.log("  site state BROKEN");
+      ms.log("security state: BROKEN");
 
       // if a monkeysphere-generated cert override is being used by this connection, then we should be setting the status from the override
       try {
@@ -87,16 +87,16 @@ var monkeysphere = (function() {
 
     // if site insecure continue
     } else if(state & Components.interfaces.nsIWebProgressListener.STATE_IS_INSECURE) {
-      ms.log("  site state INSECURE");
+      ms.log("security state: INSECURE");
 
     // else if unknown state continue
     } else {
-      ms.log("  site state is unknown");
+      ms.log("security state: UNKNOWN");
     }
 
     ////////////////////////////////////////
     // get site certificate
-    ms.log("retrieving site certificate:");
+    ms.log("retrieving site certificate...");
     var cert = ms.getInvalidCert(uri);
 
     ////////////////////////////////////////
@@ -272,12 +272,12 @@ var monkeysphere = (function() {
       onLocationChange: function(aBrowser, aWebProgress, aRequest, aLocation) {},
       onProgressChange: function(aBrowser, awebProgress, aRequest, curSelfProgress, maxSelfProgress, curTotalProgress, maxTotalProgress) {},
       onSecurityChange: function(aBrowser, aWebProgress, aRequest, aState) {
-        ms.log("++++ tabPL security change: ");
+        ms.log("++++ tabPL security change: " + aState);
         checkSite(aBrowser, aState);
         updateDisplay();
       },
       onStateChange: function(aBrowser, aWebProgress, aRequest, aStateFlags, aStatus) {
-        ms.log("++++ tabPL state change: " + aRequest);
+        ms.log("++++ tabPL state change: " + aStateFlags);
         updateDisplay();
       },
       onStatusChange: function(aBrowser, aWebProgress, aRequest, aStatus, aMessage) {}

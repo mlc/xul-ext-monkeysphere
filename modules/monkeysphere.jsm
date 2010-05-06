@@ -145,8 +145,10 @@ var isRelevantURI = function(uri) {
 var setStatus = function(browser, state, message) {
   if ( typeof message === 'undefined' ) {
     message = "";
+    log("set browser status: " + state);
+  } else {
+    log("set browser status: " + state + ', ' + message);
   }
-  log("set browser status: " + state + ', ' + message);
   browser.monkeysphere = { state: state, message: message };
 };
 
@@ -251,41 +253,41 @@ var printCertInfo = function(cert) {
   log("certificate:");
   switch (cert.verifyForUsage(Ci.nsIX509Cert.CERT_USAGE_SSLServer)) {
     case Ci.nsIX509Cert.VERIFIED_OK:
-      log("\tSSL status: OK");
+      log("  SSL status: OK");
       break;
     case Ci.nsIX509Cert.NOT_VERIFIED_UNKNOWN:
-      log("\tSSL status: not verfied/unknown");
+      log("  SSL status: not verfied/unknown");
       break;
     case Ci.nsIX509Cert.CERT_REVOKED:
-      log("\tSSL status: revoked");
+      log("  SSL status: revoked");
       break;
     case Ci.nsIX509Cert.CERT_EXPIRED:
-      log("\tSSL status: expired");
+      log("  SSL status: expired");
       break;
     case Ci.nsIX509Cert.CERT_NOT_TRUSTED:
-      log("\tSSL status: not trusted");
+      log("  SSL status: not trusted");
       break;
     case Ci.nsIX509Cert.ISSUER_NOT_TRUSTED:
-      log("\tSSL status: issuer not trusted");
+      log("  SSL status: issuer not trusted");
       break;
     case Ci.nsIX509Cert.ISSUER_UNKNOWN:
-      log("\tSSL status: issuer unknown");
+      log("  SSL status: issuer unknown");
       break;
     case Ci.nsIX509Cert.INVALID_CA:
-      log("\tSSL status: invalid CA");
+      log("  SSL status: invalid CA");
       break;
     default:
-      log("\tSSL status: unexpected failure");
+      log("  SSL status: unexpected failure");
       break;
   }
-  log("\tCommon Name: " + cert.commonName);
-  log("\tOrganisation: " + cert.organization);
-  log("\tIssuer: " + cert.issuerOrganization);
-  log("\tSHA1 fingerprint: " + cert.sha1Fingerprint);
+  log("  Common Name: " + cert.commonName);
+  log("  Organisation: " + cert.organization);
+  log("  Issuer: " + cert.issuerOrganization);
+  log("  SHA1 fingerprint: " + cert.sha1Fingerprint);
 
   var validity = cert.validity.QueryInterface(Ci.nsIX509CertValidity);
-  log("\tValid from: " + validity.notBeforeGMT);
-  log("\tValid until: " + validity.notAfterGMT);
+  log("  Valid from: " + validity.notBeforeGMT);
+  log("  Valid until: " + validity.notAfterGMT);
 };
 
 ////////////////////////////////////////////////////////////
@@ -331,10 +333,11 @@ var overrides = (
         log("overrideBits: " + overrideBits);
 
         log("set cert override: " + uri.asciiHost + ":" + uri.port);
-        certOverrideService.rememberValidityOverride(uri.asciiHost, uri.port,
-                                                                  cert,
-                                                                  overrideBits,
-                                                                  true);
+        certOverrideService.rememberValidityOverride(uri.asciiHost,
+                                                     uri.port,
+                                                     cert,
+                                                     overrideBits,
+                                                     true);
 
         log("setting cache");
         apd.log();
@@ -353,11 +356,12 @@ var overrides = (
         var aFingerprint = {};
         var aOverrideBits = {};
         var aIsTemporary = {};
-        return certOverrideService.getValidityOverride(uri.asciiHost, uri.port,
-                                                                    aHashAlg,
-                                                                    aFingerprint,
-                                                                    aOverrideBits,
-                                                                    aIsTemporary);
+        return certOverrideService.getValidityOverride(uri.asciiHost,
+                                                       uri.port,
+                                                       aHashAlg,
+                                                       aFingerprint,
+                                                       aOverrideBits,
+                                                       aIsTemporary);
       },
 
       // clear override
