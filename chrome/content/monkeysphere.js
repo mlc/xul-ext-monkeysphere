@@ -220,7 +220,9 @@ var monkeysphere = (function() {
         break;
     }
 
-    ms.log("  message: " + message);
+    if(state != 'NEUTRAL') {
+      ms.log("  message: " + message);
+    }
     panel.setAttribute("tooltiptext", message);
   };
 
