@@ -1,0 +1,27 @@
+Source: xul-ext-monkeysphere
+Section: web
+Priority: optional
+Maintainer: Jameson Rollins <jrollins@finestructure.net>
+Uploaders: Daniel Kahn Gillmor <dkg@fifthhorseman.net>
+DM-Upload-Allowed: yes
+Standards-Version: 3.8.4
+Build-Depends: debhelper (>= 7.0.50~),
+ mozilla-devscripts (>= 0.19~),
+ inkscape,
+ texlive-fonts-recommended
+Homepage: http://web.monkeysphere.info/
+Vcs-Git: git://git.monkeysphere.info/xul-ext-monkeysphere
+
+Package: xul-ext-monkeysphere
+Architecture: all
+Depends: ${misc:Depends}
+Recommends: ${xpi:Recommends},
+ monkeysphere-validation-agent
+Provides: ${xpi:Provides}
+Enhances: ${xpi:Enhances}
+Description: Iceweasel/Firefox extension for using Monkeysphere on the web
+ Monkeysphere is a system for using the OpenPGP web of trust as a PKI
+ for RSA keys.
+ .
+ This extensions enables Monkeysphere checking of X.509 certificates
+ from https hosts whose keys are in the web of trust.

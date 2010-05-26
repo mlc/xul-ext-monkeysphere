@@ -1,0 +1,31 @@
+xul-ext-monkeysphere (0.5~pre-1~pre) unstable; urgency=low
+
+  * New Upstream Release
+
+ -- Jameson Rollins <jrollins@finestructure.net>  Thu, 06 May 2010 10:05:14 -0400
+
+xul-ext-monkeysphere (0.4-1) unstable; urgency=low
+
+  * New Upstream Release (fixes extension's internal version numbering)
+  * debian/control: added build-dep on texlive-fonts-recommended for the
+    font used during icon generation (needed by inkscape).
+
+ -- Daniel Kahn Gillmor <dkg@fifthhorseman.net>  Wed, 05 May 2010 13:04:26 -0400
+
+xul-ext-monkeysphere (0.3-1) unstable; urgency=low
+
+  * New Upstream Release.
+
+ -- Daniel Kahn Gillmor <dkg@fifthhorseman.net>  Wed, 05 May 2010 00:41:28 -0400
+
+xul-ext-monkeysphere (0.2-1) unstable; urgency=low
+
+  * new upstream release fixes broken makefile
+
+ -- Jameson Rollins <jrollins@finestructure.net>  Mon, 26 Apr 2010 08:35:47 -0400
+
+xul-ext-monkeysphere (0.1-1) unstable; urgency=low
+
+  * New upstream initial release to Debian (Closes: #579177)
+
+ -- Jameson Rollins <jrollins@finestructure.net>  Sun, 25 Apr 2010 18:53:52 -0400
